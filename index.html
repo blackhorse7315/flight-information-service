@@ -80,7 +80,7 @@
             <div id="tab-dashboard" class="tab-content active animate-fadeIn space-y-6">
                 <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
                     <i data-lucide="plane" class="absolute right-[-20px] bottom-[-20px] w-48 h-48 text-white/10"></i>
-                    <h1 class="text-3xl font-bold mb-2">Welcome to Ecrew Service</h1>
+                    <h1 class="text-3xl font-bold mb-2">Welcome to Ecrew Flight Information Service</h1>
                     <p class="text-slate-300 mb-6">Manage your flight information, crew, and ground services seamlessly.</p>
                     <button onclick="switchTab('add-data')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/30">
                         <i data-lucide="plus-circle" class="w-5 h-5"></i>
@@ -1396,6 +1396,15 @@
             // Mengambil URL Gambar Super Aman (Konversi On The Fly)
             const safePicUrl = getSafePicUrl(data.aircraftPicUrl);
 
+            // Helper untuk mengubah tanggal rute menjadi format DD-MM-YYYY
+            const formatRouteDate = (rawDate) => {
+                if (!rawDate) return '-';
+                const str = String(rawDate);
+                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+                return str;
+            };
+
             // Format Flight Date for Detail View securely
             let flightDateFormatted = '-';
             if (data.date) {
@@ -1462,8 +1471,8 @@
                                 <th class="border border-slate-300 py-1 px-2 text-center">DATE</th>
                                 <th class="border border-slate-300 py-1 px-2 text-center">FROM</th>
                                 <th class="border border-slate-300 py-1 px-2 text-center">TO</th>
-                                <th class="border border-slate-300 py-1 px-2 text-center">ETD (local time)</th>
-                                <th class="border border-slate-300 py-1 px-2 text-center">ETA (local time)</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center leading-tight">ETD<br><span class="text-[10px] font-normal normal-case">(local time)</span></th>
+                                <th class="border border-slate-300 py-1 px-2 text-center leading-tight">ETA<br><span class="text-[10px] font-normal normal-case">(local time)</span></th>
                                 <th class="border border-slate-300 py-1 px-2 text-center">FLT TIME</th>
                                 <th class="border border-slate-300 py-1 px-2 text-center">REMARK</th>
                             </tr>
@@ -1472,7 +1481,7 @@
                             ${routes.map(r => `
                                 <tr>
                                     <td class="border border-slate-300 py-1 px-2 text-center">${r.leg || '-'}</td>
-                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.date || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${formatRouteDate(r.date)}</td>
                                     <td class="border border-slate-300 py-1 px-2 font-bold text-center">${r.from || '-'}</td>
                                     <td class="border border-slate-300 py-1 px-2 font-bold text-center">${r.to || '-'}</td>
                                     <td class="border border-slate-300 py-1 px-2 text-center">${r.etd || '-'}</td>
