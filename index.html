@@ -1304,16 +1304,23 @@
                     // Format Flight Date using Safe Parser
                     let flightFormatted = '-';
                     if (data.date) {
-                        const str = String(data.date);
-                        const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                        if (match) {
-                            flightFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptions);
-                        } else {
+                        const str = String(data.date).trim();
+                        if (str.includes('T')) {
                             const d = new Date(str);
                             if (!isNaN(d.getTime())) {
                                 flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                            }
+                        } else {
+                            const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (match) {
+                                flightFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptions);
                             } else {
-                                flightFormatted = str;
+                                const d = new Date(str);
+                                if (!isNaN(d.getTime())) {
+                                    flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                                } else {
+                                    flightFormatted = str;
+                                }
                             }
                         }
                     }
@@ -1440,7 +1447,11 @@
             // Helper untuk mengubah tanggal rute menjadi format DD-MM-YYYY
             const formatRouteDate = (rawDate) => {
                 if (!rawDate) return '-';
-                const str = String(rawDate);
+                const str = String(rawDate).trim();
+                if (str.includes('T')) {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+                }
                 const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
                 if (match) return `${match[3]}-${match[2]}-${match[1]}`;
                 return str;
@@ -1449,16 +1460,23 @@
             // Format Flight Date for Detail View securely
             let flightDateFormatted = '-';
             if (data.date) {
-                const str = String(data.date);
-                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    flightDateFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-                } else {
+                const str = String(data.date).trim();
+                if (str.includes('T')) {
                     const d = new Date(str);
                     if (!isNaN(d.getTime())) {
                         flightDateFormatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                    }
+                } else {
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        flightDateFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
                     } else {
-                        flightDateFormatted = str;
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) {
+                            flightDateFormatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                        } else {
+                            flightDateFormatted = str;
+                        }
                     }
                 }
             }
@@ -1813,18 +1831,26 @@
             let dateStr = 'Unknown_Date';
             if (data.date) {
                 const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const str = String(data.date);
-                // Parsing aman YYYY-MM-DD
-                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    dateStr = `${match[3]}_${monthsShort[parseInt(match[2])-1]}_${match[1]}`;
-                } else {
+                const str = String(data.date).trim();
+                
+                if (str.includes('T')) {
                     const d = new Date(str);
                     if (!isNaN(d.getTime())) {
                         dateStr = `${String(d.getDate()).padStart(2, '0')}_${monthsShort[d.getMonth()]}_${d.getFullYear()}`;
+                    }
+                } else {
+                    // Parsing aman YYYY-MM-DD
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        dateStr = `${match[3]}_${monthsShort[parseInt(match[2])-1]}_${match[1]}`;
                     } else {
-                        // Hilangkan karakter aneh jika format gagal dibaca
-                        dateStr = str.replace(/[^a-zA-Z0-9]/g, '_');
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) {
+                            dateStr = `${String(d.getDate()).padStart(2, '0')}_${monthsShort[d.getMonth()]}_${d.getFullYear()}`;
+                        } else {
+                            // Hilangkan karakter aneh jika format gagal dibaca
+                            dateStr = str.replace(/[^a-zA-Z0-9]/g, '_');
+                        }
                     }
                 }
             }
