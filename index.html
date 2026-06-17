@@ -1346,156 +1346,156 @@
 
             // Generate HTML for PDF/View
             let html = `
-                <div class="text-center mb-8">
-                    <h1 class="text-2xl font-bold uppercase tracking-widest text-slate-900 border-b-[3px] border-slate-800 pb-2 inline-block mb-3">Flight Information Service</h1>
-                    <p class="text-sm text-slate-500 font-medium tracking-wide">Providing Essential Information for Safe and Efficient Flight Operations</p>
+                <div class="text-center mb-5 avoid-break break-inside-avoid">
+                    <h1 class="text-[18px] font-bold uppercase tracking-widest text-slate-900 border-b-[2px] border-slate-800 pb-1 inline-block mb-1">Flight Information Service</h1>
+                    <p class="text-[14px] text-slate-500 font-medium tracking-wide">Providing Essential Information for Safe and Efficient Flight Operations</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
-                    <div class="border border-slate-200 p-4 rounded-lg">
-                        <h4 class="font-bold text-slate-500 uppercase text-xs mb-2 border-b pb-1 text-center">Aircraft & Pax</h4>
+                <div class="grid grid-cols-2 gap-x-6 gap-y-3 mb-6 text-[12px] avoid-break break-inside-avoid">
+                    <div class="border border-slate-200 p-3 rounded-lg">
+                        <h4 class="font-bold text-slate-500 uppercase text-[12px] mb-2 border-b pb-1 text-center">Aircraft & Pax</h4>
                         <table class="w-full">
-                            <tr><td class="py-1 font-semibold w-1/3 align-top">Date</td><td class="py-1 align-top">: ${flightDateFormatted}</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Aircraft Reg</td><td class="py-1 align-top">: ${data.aircraftReg || '-'}</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Aircraft Type</td><td class="py-1 align-top">: ${data.aircraftType || '-'}</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Lead Pax</td><td class="py-1 align-top">: ${data.leadPassenger || '-'}</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Lead Contact</td><td class="py-1 align-top">: ${data.leadContact || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold w-1/3 align-top">Date</td><td class="py-0.5 align-top">: ${flightDateFormatted}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Aircraft Reg</td><td class="py-0.5 align-top">: ${data.aircraftReg || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Aircraft Type</td><td class="py-0.5 align-top">: ${data.aircraftType || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Lead Pax</td><td class="py-0.5 align-top">: ${data.leadPassenger || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Lead Contact</td><td class="py-0.5 align-top">: ${data.leadContact || '-'}</td></tr>
                         </table>
                     </div>
-                    <div class="border border-slate-200 p-4 rounded-lg">
-                        <h4 class="font-bold text-slate-500 uppercase text-xs mb-2 border-b pb-1 text-center">Crew Information</h4>
+                    <div class="border border-slate-200 p-3 rounded-lg">
+                        <h4 class="font-bold text-slate-500 uppercase text-[12px] mb-2 border-b pb-1 text-center">Crew Information</h4>
                         <table class="w-full">
-                            <tr><td class="py-1 font-semibold w-1/3 align-top">PIC</td><td class="py-1 align-top">: ${data.crewPic || '-'} (${data.crewPicPhone || '-'})</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">SIC</td><td class="py-1 align-top">: ${data.crewSic || '-'} (${data.crewSicPhone || '-'})</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Engineer</td><td class="py-1 align-top">: ${data.crewEngineer || '-'}</td></tr>
-                            <tr><td class="py-1 font-semibold align-top">Cabin Svc</td><td class="py-1 align-top">: ${data.crewCabin || '-'} (${data.crewCabinPhone || '-'})</td></tr>
+                            <tr><td class="py-0.5 font-semibold w-1/3 align-top">PIC</td><td class="py-0.5 align-top">: ${data.crewPic || '-'} (${data.crewPicPhone || '-'})</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">SIC</td><td class="py-0.5 align-top">: ${data.crewSic || '-'} (${data.crewSicPhone || '-'})</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Engineer</td><td class="py-0.5 align-top">: ${data.crewEngineer || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Cabin Svc</td><td class="py-0.5 align-top">: ${data.crewCabin || '-'} (${data.crewCabinPhone || '-'})</td></tr>
                         </table>
                     </div>
                 </div>
 
                 <!-- Centered Aircraft Profile Image - Tahan Banting / Anti Crash -->
                 ${safePicUrl ? `
-                <div class="mb-8 flex justify-center">
-                    <div class="w-full max-w-lg h-56 bg-slate-50 border border-slate-200 rounded-lg p-2 flex items-center justify-center shadow-sm" id="detail-ac-img-container">
+                <div class="mb-5 flex justify-center avoid-break break-inside-avoid">
+                    <div class="w-full max-w-sm h-48 bg-slate-50 border border-slate-200 rounded-lg p-1.5 flex items-center justify-center shadow-sm" id="detail-ac-img-container">
                         <img src="${safePicUrl}" alt="A/C Profile" class="max-w-full max-h-full object-contain rounded" referrerpolicy="no-referrer" crossorigin="anonymous" 
-                        onerror="this.onerror=null; document.getElementById('detail-ac-img-container').innerHTML='<div class=\\'flex flex-col items-center text-red-400\\'><i data-lucide=\\'image-off\\' class=\\'w-10 h-10 mb-2\\'></i><span class=\\'text-xs font-bold text-center\\'>Gagal Memuat Gambar.<br>Coba gunakan situs Imgur.com</span></div>'; lucide.createIcons();">
+                        onerror="this.onerror=null; document.getElementById('detail-ac-img-container').innerHTML='<div class=\\'flex flex-col items-center text-red-400\\'><i data-lucide=\\'image-off\\' class=\\'w-8 h-8 mb-1\\'></i><span class=\\'text-[12px] font-bold text-center\\'>Gagal Memuat Gambar.<br>Coba gunakan situs Imgur.com</span></div>'; lucide.createIcons();">
                     </div>
                 </div>
                 ` : ''}
 
                 <!-- Routes Table -->
-                <div class="mb-6">
-                    <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2 text-center">Route Information</h4>
-                    <table class="w-full text-xs text-center border-collapse border border-slate-300">
+                <div class="mb-5 avoid-break break-inside-avoid">
+                    <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-2 text-center">Route Information</h4>
+                    <table class="w-full text-[12px] text-center border-collapse border border-slate-300">
                         <thead>
                             <tr class="bg-slate-50">
-                                <th class="border border-slate-300 p-2 text-center">LEG</th>
-                                <th class="border border-slate-300 p-2 text-center">DATE</th>
-                                <th class="border border-slate-300 p-2 text-center">FROM</th>
-                                <th class="border border-slate-300 p-2 text-center">TO</th>
-                                <th class="border border-slate-300 p-2 text-center">ETD (local time)</th>
-                                <th class="border border-slate-300 p-2 text-center">ETA (local time)</th>
-                                <th class="border border-slate-300 p-2 text-center">FLT TIME</th>
-                                <th class="border border-slate-300 p-2 text-center">REMARK</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">LEG</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">DATE</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">FROM</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">TO</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">ETD (Lcl)</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">ETA (Lcl)</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">FLT TIME</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">REMARK</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${routes.map(r => `
                                 <tr>
-                                    <td class="border border-slate-300 p-2 text-center">${r.leg || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${r.date || '-'}</td>
-                                    <td class="border border-slate-300 p-2 font-bold text-center">${r.from || '-'}</td>
-                                    <td class="border border-slate-300 p-2 font-bold text-center">${r.to || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${r.etd || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${r.eta || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${r.fltTime || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${r.remark || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.leg || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.date || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 font-bold text-center">${r.from || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 font-bold text-center">${r.to || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.etd || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.eta || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.fltTime || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${r.remark || '-'}</td>
                                 </tr>
-                            `).join('') || '<tr><td colspan="8" class="border p-2 text-center text-slate-400">No route data</td></tr>'}
+                            `).join('') || '<tr><td colspan="8" class="border py-1 px-2 text-center text-slate-400">No route data</td></tr>'}
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Passengers Table -->
-                <div class="mb-6">
-                    <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2 text-center">Passenger Information</h4>
-                    <table class="w-full text-xs text-left border-collapse border border-slate-300">
+                <div class="mb-5 avoid-break break-inside-avoid">
+                    <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-2 text-center">Passenger Information</h4>
+                    <table class="w-full text-[12px] text-left border-collapse border border-slate-300">
                         <thead>
                             <tr class="bg-slate-50">
-                                <th class="border border-slate-300 p-2 w-16 text-center">NO</th>
-                                <th class="border border-slate-300 p-2 w-24 text-center">LEG</th>
-                                <th class="border border-slate-300 p-2 text-center">NAME</th>
-                                <th class="border border-slate-300 p-2 w-32 text-center">SEX</th>
+                                <th class="border border-slate-300 py-1 px-2 w-12 text-center">NO</th>
+                                <th class="border border-slate-300 py-1 px-2 w-16 text-center">LEG</th>
+                                <th class="border border-slate-300 py-1 px-2 text-center">NAME</th>
+                                <th class="border border-slate-300 py-1 px-2 w-24 text-center">SEX</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${pax.map((p, i) => `
                                 <tr>
-                                    <td class="border border-slate-300 p-2 text-center">${i + 1}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${p.leg || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-left">${p.name || '-'}</td>
-                                    <td class="border border-slate-300 p-2 text-center">${p.sex || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${i + 1}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${p.leg || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-left">${p.name || '-'}</td>
+                                    <td class="border border-slate-300 py-1 px-2 text-center">${p.sex || '-'}</td>
                                 </tr>
-                            `).join('') || '<tr><td colspan="4" class="border p-2 text-center text-slate-400">No passenger data</td></tr>'}
+                            `).join('') || '<tr><td colspan="4" class="border py-1 px-2 text-center text-slate-400">No passenger data</td></tr>'}
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Ground Handling & Slots -->
-                <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="grid grid-cols-2 gap-4 mb-4 avoid-break break-inside-avoid">
                     <div>
-                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Ground Handling</h4>
-                        <div class="text-xs space-y-3">
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-1.5 text-center">Ground Handling</h4>
+                        <div class="text-[12px] space-y-1.5">
                             ${gh.map(g => `
-                                <div class="border border-slate-200 p-2 rounded">
+                                <div class="border border-slate-200 p-1.5 rounded">
                                     <p><strong>Airport:</strong> ${g.airport || '-'}</p>
                                     <p><strong>Handler:</strong> ${g.handler || '-'}</p>
                                     <p><strong>Phone:</strong> ${g.phone || '-'}</p>
                                     <p><strong>PIC:</strong> ${g.pic || '-'} (${g.cell || '-'})</p>
                                 </div>
-                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No ground handling data</p>'}
+                            `).join('') || '<p class="text-slate-400 p-1.5 border border-slate-200 rounded text-center">No ground handling data</p>'}
                         </div>
                     </div>
                     <div>
-                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Slot Information</h4>
-                        <div class="text-xs space-y-3">
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-1.5 text-center">Slot Information</h4>
+                        <div class="text-[12px] space-y-1.5">
                             ${slots.map(s => `
-                                <div class="border border-slate-200 p-2 rounded">
+                                <div class="border border-slate-200 p-1.5 rounded">
                                     <p><strong>Leg:</strong> ${s.leg || '-'}</p>
                                     <p><strong>Landing At:</strong> ${s.landingAt || '-'}</p>
                                     <p><strong>Status:</strong> ${s.status || '-'}</p>
                                     <p><strong>Stand/Other:</strong> ${s.parkingStand || '-'} / ${s.otherInfo || '-'}</p>
                                 </div>
-                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No slot data</p>'}
+                            `).join('') || '<p class="text-slate-400 p-1.5 border border-slate-200 rounded text-center">No slot data</p>'}
                         </div>
                     </div>
                 </div>
 
                 <!-- Accomodation & Transport -->
-                <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="grid grid-cols-2 gap-4 mb-4 avoid-break break-inside-avoid">
                     <div>
-                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Accommodation</h4>
-                        <div class="text-xs space-y-3">
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-1.5 text-center">Accommodation</h4>
+                        <div class="text-[12px] space-y-1.5">
                             ${acc.map(a => `
-                                <div class="border border-slate-200 p-2 rounded">
+                                <div class="border border-slate-200 p-1.5 rounded">
                                     <p class="font-bold">${a.hotelName || '-'}</p>
                                     <p>${a.address || '-'}</p>
                                     <p><strong>Phone:</strong> ${a.phone || '-'}</p>
                                     <p><strong>PIC:</strong> ${a.picName || '-'} (${a.cellNo || '-'})</p>
                                 </div>
-                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No accommodation data</p>'}
+                            `).join('') || '<p class="text-slate-400 p-1.5 border border-slate-200 rounded text-center">No accommodation data</p>'}
                         </div>
                     </div>
                     <div>
-                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Transport</h4>
-                        <div class="text-xs space-y-3">
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-1.5 text-[12px] uppercase mb-1.5 text-center">Transport</h4>
+                        <div class="text-[12px] space-y-1.5">
                             ${trans.map(t => `
-                                <div class="border border-slate-200 p-2 rounded">
+                                <div class="border border-slate-200 p-1.5 rounded">
                                     <p><strong>Loc:</strong> ${t.location || '-'}</p>
                                     <p><strong>By:</strong> ${t.transportBy || '-'}</p>
                                     <p><strong>Driver:</strong> ${t.driverName || '-'} (${t.cellNo || '-'})</p>
                                 </div>
-                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No transport data</p>'}
+                            `).join('') || '<p class="text-slate-400 p-1.5 border border-slate-200 rounded text-center">No transport data</p>'}
                         </div>
                     </div>
                 </div>
@@ -1718,7 +1718,8 @@
                 filename:     dynamicFileName,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['css', 'legacy'], avoid: '.avoid-break' } // Fitur untuk mencegah pemotongan komponen tabel/informasi
             };
 
             // Generate and Save
