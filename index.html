@@ -809,8 +809,12 @@
                 updateDashboardStats();
             }
 
-            // Close sidebar on mobile
-            if (window.innerWidth < 768) {
+            // Scroll otomatis ke paling atas setiap ganti tab/halaman (Sangat membantu di layar HP)
+            document.querySelector('main').scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Close sidebar on mobile HANYA jika sidebar tersebut sedang dalam keadaan TERBUKA
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth < 768 && sidebar.classList.contains('sidebar-open')) {
                 toggleSidebar();
             }
         }
