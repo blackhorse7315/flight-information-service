@@ -254,14 +254,18 @@
                                 </div>
 
                                 <!-- Engineer -->
-                                <div class="col-span-1 md:col-span-2 flex flex-col gap-1.5">
+                                <div class="col-span-1 flex flex-col gap-1.5">
                                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Flight Engineer</label>
                                     <div class="flex gap-2">
-                                        <select name="crewEngineer" id="select-eng" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select">
+                                        <select name="crewEngineer" id="select-eng" onchange="autoFillCrew(this.value, 'crewEngineerPhone')" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select">
                                             <option value="">Select Engineer</option>
                                         </select>
                                         <button type="button" onclick="openMasterModal('Crews')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3.5 rounded-lg border border-amber-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
                                     </div>
+                                </div>
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Engineer Phone</label>
+                                    <input type="text" name="crewEngineerPhone" id="crewEngineerPhone" placeholder="Auto-filled" class="w-full px-4 py-2.5 bg-slate-100/70 border border-slate-200 rounded-lg outline-none text-sm cursor-not-allowed text-slate-500" readonly>
                                 </div>
 
                                 <!-- Cabin -->
@@ -344,7 +348,8 @@
                                 <thead class="text-xs text-slate-500 uppercase bg-slate-50">
                                     <tr>
                                         <th class="px-3 py-2 rounded-l-lg w-12 text-center">No</th>
-                                        <th class="px-3 py-2 w-24">Leg</th>
+                                        <!-- Perlebar kolom Leg dengan min-w-[90px] -->
+                                        <th class="px-3 py-2 min-w-[90px]">Leg</th>
                                         <th class="px-3 py-2 min-w-[180px]">Passenger Name</th>
                                         <th class="px-3 py-2 w-32">Sex</th>
                                         <th class="px-3 py-2 rounded-r-lg"></th>
@@ -434,7 +439,7 @@
                             <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     <th class="px-6 py-4">Date Submited</th>
-                                    <th class="px-6 py-4">Flight Date</th>
+                                    <th class="px-6 py-4">Date</th>
                                     <th class="px-6 py-4">A/C Reg</th>
                                     <th class="px-6 py-4">A/C Type</th>
                                     <th class="px-6 py-4">PIC</th>
@@ -610,13 +615,42 @@
             const acSelect = document.getElementById('select-aircraft');
             acSelect.innerHTML = '<option value="">Select A/C</option>' + masterData.aircrafts.map(a => `<option value="${a.reg}">${a.reg}</option>`).join('');
 
-            // Crews
-            const crewOptions = '<option value="">Select Crew</option>' + masterData.crews.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
-            document.querySelectorAll('.crew-select').forEach(select => {
-                const currentVal = select.value;
-                select.innerHTML = crewOptions;
-                select.value = currentVal; // Restore selection if any
-            });
+            // Helper format nama: Title Case & Auto Prefix Kualifikasi
+            const getFullCrewName = (c) => {
+                const titleName = (c.name || '').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+                let qual = (c.qualification || '').trim();
+                const qualUpper = qual.toUpperCase();
+                
+                if(qualUpper.includes('CAPT')) qual = 'Capt.';
+                else if(qualUpper.includes('FO')) qual = 'FO.';
+                else if(qualUpper.includes('ENG')) qual = 'Eng.';
+                else if(qualUpper.includes('CS')) qual = 'Cs.';
+                else qual = qual.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+
+                // Mencegah double gelar jika nama asli di sheet sudah terlanjur diketik "Capt. Budi"
+                if (titleName.toLowerCase().startsWith(qual.toLowerCase())) return titleName;
+                return qual ? `${qual} ${titleName}` : titleName;
+            };
+
+            // Crews (Filtered by Qualification)
+            const filterCrew = (qualArray) => {
+                return masterData.crews
+                    .filter(c => c.qualification && qualArray.some(q => String(c.qualification).toUpperCase().includes(q)))
+                    .map(c => `<option value="${c.name}">${c.name}</option>`)
+                    .join('');
+            }
+
+            const picSelect = document.getElementById('select-pic');
+            if(picSelect) { const cur = picSelect.value; picSelect.innerHTML = '<option value="">Select PIC</option>' + filterCrew(['CAPT', 'FO']); picSelect.value = cur; }
+            
+            const sicSelect = document.getElementById('select-sic');
+            if(sicSelect) { const cur = sicSelect.value; sicSelect.innerHTML = '<option value="">Select SIC</option>' + filterCrew(['CAPT', 'FO']); sicSelect.value = cur; }
+
+            const engSelect = document.getElementById('select-eng');
+            if(engSelect) { const cur = engSelect.value; engSelect.innerHTML = '<option value="">Select Engineer</option>' + filterCrew(['ENG']); engSelect.value = cur; }
+
+            const cabinSelect = document.getElementById('select-cabin');
+            if(cabinSelect) { const cur = cabinSelect.value; cabinSelect.innerHTML = '<option value="">Select Cabin</option>' + filterCrew(['CS']); cabinSelect.value = cur; }
 
             // Locations (Datalist for Routes)
             const locList = document.getElementById('locations-list');
@@ -656,8 +690,24 @@
             }
         }
 
-        function autoFillCrew(name, targetInputId) {
-            const crew = masterData.crews.find(c => c.name === name);
+        function autoFillCrew(fullName, targetInputId) {
+            const getFullCrewName = (c) => {
+                const titleName = (c.name || '').toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+                let qual = (c.qualification || '').trim();
+                const qualUpper = qual.toUpperCase();
+                
+                if(qualUpper.includes('CAPT')) qual = 'Capt.';
+                else if(qualUpper.includes('FO')) qual = 'FO.';
+                else if(qualUpper.includes('ENG')) qual = 'Eng.';
+                else if(qualUpper.includes('CS')) qual = 'Cs.';
+                else qual = qual.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+
+                if (titleName.toLowerCase().startsWith(qual.toLowerCase())) return titleName;
+                return qual ? `${qual} ${titleName}` : titleName;
+            };
+
+            // Cari kru berdasarkan nama lengkap yang sudah diformat atau nama aslinya
+            const crew = masterData.crews.find(c => getFullCrewName(c) === fullName || c.name === fullName);
             document.getElementById(targetInputId).value = crew ? crew.phone : '';
         }
 
@@ -694,6 +744,15 @@
                 html = `
                     <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Full Name</label><input type="text" name="name" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required></div>
                     <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Phone Number</label><input type="text" name="phone" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500"></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Qualification</label>
+                        <select name="qualification" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required>
+                            <option value="">Select Role</option>
+                            <option value="Capt.">Capt.</option>
+                            <option value="FO.">FO.</option>
+                            <option value="Eng.">Eng.</option>
+                            <option value="Cs.">Cs.</option>
+                        </select>
+                    </div>
                 `;
             } else if (sheetName === 'Locations') {
                 title.innerHTML = `<i data-lucide="map-pin" class="w-5 h-5 text-amber-500"></i> Add New Route Location`;
@@ -747,8 +806,12 @@
                 if (key === 'picUrl') {
                     // Konversi otomatis khusus URL Gambar
                     dataObj[key] = convertDriveUrl(strVal);
-                } else {
+                } else if (key === 'reg' || key === 'type' || key === 'icao') {
+                    // Paksa huruf besar HANYA untuk registrasi pesawat, tipe, dan kode lokasi ICAO
                     dataObj[key] = strVal.toUpperCase();
+                } else {
+                    // Biarkan isian lainnya (Nama Crew, Pax, Nomor Telepon) sesuai ketikan aslinya
+                    dataObj[key] = strVal;
                 }
             });
 
@@ -843,6 +906,11 @@
             const field = target.name;
 
             if (section && index !== undefined && field) {
+                // FITUR BARU: Ubah spasi menjadi titik pada input 'leg'
+                if (field === 'leg') {
+                    target.value = target.value.replace(/ /g, '.');
+                }
+                
                 state[section][index][field] = target.value;
             }
         }
@@ -869,11 +937,9 @@
 
             data.forEach((item, i) => {
                 if (section === 'routes') {
-                    // Changed From and To to use input list="locations-list"
-                    // Added min-w-[...] to ensure columns don't shrink too much
                     html += `
                     <tr class="border-b border-slate-100 last:border-0">
-                        <td class="px-3 py-2"><input type="number" data-section="${section}" data-index="${i}" name="leg" class="w-16 p-2 bg-slate-50 rounded border border-slate-200" value="${item.leg}"></td>
+                        <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="leg" class="w-full min-w-[70px] p-2 bg-slate-50 rounded border border-slate-200 text-center" value="${item.leg}" placeholder="1.1"></td>
                         <td class="px-3 py-2"><input type="date" data-section="${section}" data-index="${i}" name="date" class="w-full min-w-[130px] p-2 bg-slate-50 rounded border border-slate-200" value="${item.date}"></td>
                         <td class="px-3 py-2"><input type="text" list="locations-list" data-section="${section}" data-index="${i}" name="from" class="w-full min-w-[120px] p-2 bg-slate-50 rounded border border-slate-200 uppercase" value="${item.from}" placeholder="ICAO"></td>
                         <td class="px-3 py-2"><input type="text" list="locations-list" data-section="${section}" data-index="${i}" name="to" class="w-full min-w-[120px] p-2 bg-slate-50 rounded border border-slate-200 uppercase" value="${item.to}" placeholder="ICAO"></td>
@@ -893,12 +959,11 @@
                     </tr>`;
                 } 
                 else if (section === 'passengers') {
-                    // Changed input text Name to select from Master Data
                     const paxOptions = '<option value="">Select Pax</option>' + masterData.passengers.map(p => `<option value="${p.name}" ${item.name === p.name ? 'selected' : ''}>${p.name}</option>`).join('');
                     html += `
                     <tr class="border-b border-slate-100 last:border-0">
                         <td class="px-3 py-2 text-center text-slate-400 font-bold">#${i + 1}</td>
-                        <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="leg" class="w-full p-2 bg-slate-50 rounded border border-slate-200" value="${item.leg}" placeholder="Leg"></td>
+                        <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="leg" class="w-full min-w-[90px] p-2 bg-slate-50 rounded border border-slate-200 text-center font-semibold" value="${item.leg}" placeholder="e.g. 1.2"></td>
                         <td class="px-3 py-2">
                             <select data-section="${section}" data-index="${i}" name="name" onchange="autoFillPassenger(this, ${i})" class="w-full p-2 bg-white rounded border border-slate-200">
                                 ${paxOptions}
@@ -991,8 +1056,8 @@
 
             // Gather standard form values
             const formDataObj = new FormData(e.target);
-            // Menambahkan aircraftPicUrl ke dalam field yang akan disubmit ke Sheets
-            const standardFields = ['date', 'aircraftReg', 'aircraftType', 'aircraftPicUrl', 'leadPassenger', 'leadContact', 'crewPic', 'crewPicPhone', 'crewSic', 'crewSicPhone', 'crewEngineer', 'crewCabin', 'crewCabinPhone'];
+            // Menambahkan aircraftPicUrl dan crewEngineerPhone ke dalam field yang disubmit ke Sheets
+            const standardFields = ['date', 'aircraftReg', 'aircraftType', 'aircraftPicUrl', 'leadPassenger', 'leadContact', 'crewPic', 'crewPicPhone', 'crewSic', 'crewSicPhone', 'crewEngineer', 'crewEngineerPhone', 'crewCabin', 'crewCabinPhone'];
             
             // PENTING: Pertahankan timestamp lama jika sedang Edit, agar Google Sheets menimpa baris yang benar
             const flightData = {
@@ -1371,7 +1436,7 @@
                         <table class="w-full">
                             <tr><td class="py-0.5 font-semibold w-1/3 align-top">PIC</td><td class="py-0.5 align-top">: ${data.crewPic || '-'} (${data.crewPicPhone || '-'})</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">SIC</td><td class="py-0.5 align-top">: ${data.crewSic || '-'} (${data.crewSicPhone || '-'})</td></tr>
-                            <tr><td class="py-0.5 font-semibold align-top">Engineer</td><td class="py-0.5 align-top">: ${data.crewEngineer || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Engineer</td><td class="py-0.5 align-top">: ${data.crewEngineer || '-'} (${data.crewEngineerPhone || '-'})</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Cabin Svc</td><td class="py-0.5 align-top">: ${data.crewCabin || '-'} (${data.crewCabinPhone || '-'})</td></tr>
                         </table>
                     </div>
@@ -1534,20 +1599,32 @@
             const form = document.getElementById('flight-form');
             
             // SUPER SAFE DATE PARSER FOR <input type="date">
-            let dateValue = '';
-            if (data.date) {
-                const str = String(data.date);
-                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    dateValue = `${match[1]}-${match[2]}-${match[3]}`;
-                } else {
+            const parseDateForInput = (rawDate) => {
+                if (!rawDate) return '';
+                const str = String(rawDate).trim();
+                
+                // Format dari Google Sheets ISO T...Z
+                if (str.includes('T') && (str.includes('Z') || str.includes('+'))) {
                     const d = new Date(str);
-                    if (!isNaN(d.getTime())) {
-                        dateValue = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                    }
+                    if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 }
-            }
-            form.elements['date'].value = dateValue;
+                
+                // Format Standar YYYY-MM-DD
+                const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (matchIso) return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
+                
+                // Format Indonesia DD/MM/YYYY atau DD-MM-YYYY
+                const matchID = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (matchID) return `${matchID[3]}-${String(matchID[2]).padStart(2,'0')}-${String(matchID[1]).padStart(2,'0')}`;
+                
+                // Fallback Date JavaScript (Bisa baca text seperti "16 June 2026")
+                const d = new Date(str);
+                if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                
+                return '';
+            };
+
+            form.elements['date'].value = parseDateForInput(data.date);
             
             form.elements['aircraftReg'].value = data.aircraftReg || '';
             autoFillAircraft(data.aircraftReg || ''); // Panggil gambar otomatis saat mode Edit
@@ -1560,6 +1637,7 @@
             form.elements['crewSic'].value = data.crewSic || '';
             form.elements['crewSicPhone'].value = data.crewSicPhone || '';
             form.elements['crewEngineer'].value = data.crewEngineer || '';
+            form.elements['crewEngineerPhone'].value = data.crewEngineerPhone || '';
             form.elements['crewCabin'].value = data.crewCabin || '';
             form.elements['crewCabinPhone'].value = data.crewCabinPhone || '';
 
@@ -1571,16 +1649,7 @@
             // Proses routes dan pastikan field date jika ada di tabel route formatnya sesuai
             const parsedRoutes = parseSafe(data.routesJSON);
             state.routes = parsedRoutes.length ? parsedRoutes.map(r => {
-                if (r.date) {
-                    const str = String(r.date);
-                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                    if (match) {
-                        r.date = `${match[1]}-${match[2]}-${match[3]}`;
-                    } else {
-                        const d = new Date(str);
-                        if (!isNaN(d.getTime())) r.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                    }
-                }
+                r.date = parseDateForInput(r.date);
                 return r;
             }) : [{ ...defaultRows.routes }];
             
