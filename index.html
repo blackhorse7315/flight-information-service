@@ -533,7 +533,7 @@
     <!-- Application Script -->
     <script>
         // --- CONFIGURATION ---
-        const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw5jZiU4SVcsKiBwF9YKuo7-YuQA8koz2acw1K7eoQnwcwwz-mDak2djc17NJxGM3xW/exec";
+        const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlLXa-I3DLkpttRA4mvbIdrMtOonC-MmvscRNmI8bvqE25zqu8bUmpvpz8HhQ3Y1Ar/exec";
 
         // Application State
         const state = {
@@ -550,7 +550,8 @@
             aircrafts: [],
             crews: [],
             locations: [],
-            passengers: []
+            passengers: [],
+            handlers: [] // NEW: Untuk Ground Handling
         };
         let currentMasterSheet = '';
 
@@ -658,8 +659,9 @@
                 locList.innerHTML = masterData.locations.map(l => `<option value="${l.icao}">`).join('');
             }
             
-            // Re-render sections that might need updated dropdown options (like Passengers)
+            // Re-render sections that might need updated dropdown options
             renderSection('passengers');
+            renderSection('groundHandling');
         }
 
         function autoFillAircraft(reg) {
@@ -721,6 +723,24 @@
             }
         }
 
+        function autoFillHandler(selectEl, index) {
+            const name = selectEl.value;
+            const handler = masterData.handlers.find(h => h.name === name);
+            if (handler) {
+                state.groundHandling[index].handler = name;
+                state.groundHandling[index].phone = handler.phone || '';
+                state.groundHandling[index].pic = handler.pic || '';
+                state.groundHandling[index].cell = handler.cell || '';
+                renderSection('groundHandling');
+            } else {
+                state.groundHandling[index].handler = '';
+                state.groundHandling[index].phone = '';
+                state.groundHandling[index].pic = '';
+                state.groundHandling[index].cell = '';
+                renderSection('groundHandling');
+            }
+        }
+
         // Modal Master Data Logic
         function openMasterModal(sheetName) {
             currentMasterSheet = sheetName;
@@ -768,6 +788,14 @@
                             <option value="Male">Male</option><option value="Female">Female</option><option value="Child">Child</option><option value="Infant">Infant</option>
                         </select>
                     </div>
+                `;
+            } else if (sheetName === 'Handlers') {
+                title.innerHTML = `<i data-lucide="briefcase" class="w-5 h-5 text-amber-500"></i> Add New Handler`;
+                html = `
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Handled By (Company/Name)</label><input type="text" name="name" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Office Phone</label><input type="text" name="phone" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500"></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">PIC Name</label><input type="text" name="pic" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500"></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Cell Number</label><input type="text" name="cell" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500"></div>
                 `;
             }
             container.innerHTML = html;
@@ -983,15 +1011,21 @@
                     </tr>`;
                 }
                 else if (section === 'groundHandling') {
+                    const handlerOptions = '<option value="">Select Handler</option>' + masterData.handlers.map(h => `<option value="${h.name}" ${item.handler === h.name ? 'selected' : ''}>${h.name}</option>`).join('');
                     html += `
                     <div class="space-y-2 bg-slate-50 p-3 rounded border border-slate-100 relative">
                         <button type="button" onclick="removeRow('${section}', ${i})" class="absolute top-2 right-2 text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-0 pr-6 sm:pr-8">
                             <input type="text" data-section="${section}" data-index="${i}" name="airport" placeholder="Airport" class="p-2 text-sm border rounded w-full" value="${item.airport}">
-                            <input type="text" data-section="${section}" data-index="${i}" name="handler" placeholder="Handled By" class="p-2 text-sm border rounded w-full" value="${item.handler}">
-                            <input type="text" data-section="${section}" data-index="${i}" name="phone" placeholder="Office Phone" class="p-2 text-sm border rounded w-full" value="${item.phone}">
-                            <input type="text" data-section="${section}" data-index="${i}" name="pic" placeholder="PIC Name" class="p-2 text-sm border rounded w-full" value="${item.pic}">
-                            <input type="text" data-section="${section}" data-index="${i}" name="cell" placeholder="Cell Number" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.cell}">
+                            <div class="flex gap-1 w-full">
+                                <select data-section="${section}" data-index="${i}" name="handler" onchange="autoFillHandler(this, ${i})" class="p-2 text-sm border rounded w-full bg-white text-slate-700 font-medium">
+                                    ${handlerOptions}
+                                </select>
+                                <button type="button" onclick="openMasterModal('Handlers')" class="bg-blue-50 hover:bg-blue-100 text-blue-600 px-2 rounded border border-blue-200 transition-colors shadow-sm shrink-0"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                            </div>
+                            <input type="text" data-section="${section}" data-index="${i}" name="phone" placeholder="Office Phone" class="p-2 text-sm border rounded w-full bg-white" value="${item.phone}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="pic" placeholder="PIC Name" class="p-2 text-sm border rounded w-full bg-white" value="${item.pic}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="cell" placeholder="Cell Number" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full bg-white" value="${item.cell}">
                         </div>
                     </div>`;
                 }
@@ -1264,16 +1298,22 @@
                     // Format Flight Date using Safe Parser
                     let flightFormatted = '-';
                     if (data.date) {
-                        const str = String(data.date);
-                        const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                        if (match) {
-                            flightFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptions);
-                        } else {
+                        const str = String(data.date).trim();
+                        // Prioritaskan konversi dari ISO (Google Sheets) agar zona waktu disesuaikan otomatis
+                        if (str.includes('T')) {
                             const d = new Date(str);
-                            if (!isNaN(d.getTime())) {
-                                flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                            if (!isNaN(d.getTime())) flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                        } else {
+                            const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                            if (match) {
+                                flightFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptions);
                             } else {
-                                flightFormatted = str;
+                                const d = new Date(str);
+                                if (!isNaN(d.getTime())) {
+                                    flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                                } else {
+                                    flightFormatted = str;
+                                }
                             }
                         }
                     }
@@ -1345,6 +1385,7 @@
                 masterData.crews = result.crews || [];
                 masterData.locations = result.locations || [];
                 masterData.passengers = result.passengers || [];
+                masterData.handlers = result.handlers || [];
 
                 populateDropdowns();
 
@@ -1407,17 +1448,24 @@
 
             // Format Flight Date for Detail View securely
             let flightDateFormatted = '-';
+            const dateOptionsView = { day: 'numeric', month: 'long', year: 'numeric' };
             if (data.date) {
-                const str = String(data.date);
-                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    flightDateFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-                } else {
+                const str = String(data.date).trim();
+                // Prioritaskan ISO dengan konversi zona waktu
+                if (str.includes('T')) {
                     const d = new Date(str);
-                    if (!isNaN(d.getTime())) {
-                        flightDateFormatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                    if (!isNaN(d.getTime())) flightDateFormatted = d.toLocaleDateString('en-GB', dateOptionsView);
+                } else {
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        flightDateFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptionsView);
                     } else {
-                        flightDateFormatted = str;
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) {
+                            flightDateFormatted = d.toLocaleDateString('en-GB', dateOptionsView);
+                        } else {
+                            flightDateFormatted = str;
+                        }
                     }
                 }
             }
@@ -1608,32 +1656,28 @@
             const form = document.getElementById('flight-form');
             
             // SUPER SAFE DATE PARSER FOR <input type="date">
-            const parseDateForInput = (rawDate) => {
-                if (!rawDate) return '';
-                const str = String(rawDate).trim();
-                
-                // Format dari Google Sheets ISO T...Z
-                if (str.includes('T') && (str.includes('Z') || str.includes('+'))) {
+            let dateValue = '';
+            if (data.date) {
+                const str = String(data.date).trim();
+                // Mengkonversi format ISO menjadi format YYYY-MM-DD dengan aman
+                if (str.includes('T')) {
                     const d = new Date(str);
-                    if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    if (!isNaN(d.getTime())) {
+                        dateValue = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    }
+                } else {
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        dateValue = `${match[1]}-${match[2]}-${match[3]}`;
+                    } else {
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) {
+                            dateValue = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                        }
+                    }
                 }
-                
-                // Format Standar YYYY-MM-DD
-                const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (matchIso) return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
-                
-                // Format Indonesia DD/MM/YYYY atau DD-MM-YYYY
-                const matchID = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                if (matchID) return `${matchID[3]}-${String(matchID[2]).padStart(2,'0')}-${String(matchID[1]).padStart(2,'0')}`;
-                
-                // Fallback Date JavaScript (Bisa baca text seperti "16 June 2026")
-                const d = new Date(str);
-                if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                
-                return '';
-            };
-
-            form.elements['date'].value = parseDateForInput(data.date);
+            }
+            form.elements['date'].value = dateValue;
             
             form.elements['aircraftReg'].value = data.aircraftReg || '';
             autoFillAircraft(data.aircraftReg || ''); // Panggil gambar otomatis saat mode Edit
@@ -1772,19 +1816,26 @@
             let dateStr = 'Unknown_Date';
             if (data.date) {
                 const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                const str = String(data.date);
-                // Parsing aman YYYY-MM-DD
-                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
-                if (match) {
-                    dateStr = `${match[3]}_${monthsShort[parseInt(match[2])-1]}_${match[1]}`;
-                } else {
+                const str = String(data.date).trim();
+                let dTarget = null;
+                
+                if (str.includes('T')) {
                     const d = new Date(str);
-                    if (!isNaN(d.getTime())) {
-                        dateStr = `${String(d.getDate()).padStart(2, '0')}_${monthsShort[d.getMonth()]}_${d.getFullYear()}`;
+                    if (!isNaN(d.getTime())) dTarget = d;
+                } else {
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        dTarget = new Date(match[1], parseInt(match[2]) - 1, match[3]);
                     } else {
-                        // Hilangkan karakter aneh jika format gagal dibaca
-                        dateStr = str.replace(/[^a-zA-Z0-9]/g, '_');
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) dTarget = d;
                     }
+                }
+                
+                if (dTarget) {
+                    dateStr = `${String(dTarget.getDate()).padStart(2, '0')}_${monthsShort[dTarget.getMonth()]}_${dTarget.getFullYear()}`;
+                } else {
+                    dateStr = str.replace(/[^a-zA-Z0-9]/g, '_');
                 }
             }
             
