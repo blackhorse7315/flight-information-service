@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecrew Flight Information Service</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- html2pdf for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
+        .animate-slideUp { animation: slideUp 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Sidebar transition for mobile */
+        .sidebar-open { transform: translateX(0); }
+        .sidebar-closed { transform: translateX(-100%); }
+        @media (min-width: 768px) {
+            .sidebar-closed { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans flex text-slate-800">
+
+    <!-- Sidebar Mobile Toggle -->
+    <div class="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900 z-50 flex items-center justify-between px-4 text-white shadow-md">
+        <div class="flex items-center gap-2 font-bold text-xl">
+            <i data-lucide="plane" class="w-6 h-6 text-blue-400"></i> Ecrew
+        </div>
+        <button id="mobile-menu-btn" class="p-2">
+            <i data-lucide="menu" id="menu-icon"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 bg-slate-900 text-slate-300 w-64 flex flex-col transition-transform duration-300 z-40 sidebar-closed md:static">
+        <div class="p-6 hidden md:flex items-center gap-3 text-white font-bold text-2xl tracking-tight border-b border-slate-800">
+            <i data-lucide="plane" class="w-8 h-8 text-blue-400"></i>
+            Ecrew
+        </div>
+        <nav class="flex-1 px-4 py-6 mt-16 md:mt-0 space-y-2" id="nav-menu">
+            <button onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all bg-blue-600 text-white">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i> Dashboard
+            </button>
+            <button onclick="switchTab('add-data')" data-tab="add-data" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-slate-800 hover:text-white">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i> Add New Data
+            </button>
+            <button onclick="switchTab('history')" data-tab="history" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:bg-slate-800 hover:text-white">
+                <i data-lucide="history" class="w-5 h-5"></i> History Data
+            </button>
+
+            <!-- Sync Button di Sidebar -->
+            <div class="pt-6 mt-6 border-t border-slate-800">
+                <button onclick="syncData()" id="btn-sync-sidebar" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700">
+                    <i data-lucide="refresh-cw" id="icon-sync-sidebar" class="w-5 h-5"></i> Sync Data
+                </button>
+            </div>
+        </nav>
+        <div class="p-4 text-xs text-slate-500 text-center border-t border-slate-800">
+            Ecrew Flight Service &copy; 2024
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto pt-16 md:pt-0">
+        <div class="p-6 lg:p-10 max-w-7xl mx-auto w-full">
+            
+            <!-- DASHBOARD TAB -->
+            <div id="tab-dashboard" class="tab-content active animate-fadeIn space-y-6">
+                <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                    <i data-lucide="plane" class="absolute right-[-20px] bottom-[-20px] w-48 h-48 text-white/10"></i>
+                    <h1 class="text-3xl font-bold mb-2">Welcome to Ecrew Service</h1>
+                    <p class="text-slate-300 mb-6">Manage your flight information, crew, and ground services seamlessly.</p>
+                    <button onclick="switchTab('add-data')" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all shadow-lg hover:shadow-blue-500/30">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        Create New Flight Data
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="bg-blue-100 p-4 rounded-lg text-blue-600">
+                            <i data-lucide="plane-takeoff" class="w-8 h-8"></i>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">Total Flights</p>
+                            <p id="stat-total-flights" class="text-2xl font-bold text-slate-800">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="bg-emerald-100 p-4 rounded-lg text-emerald-600">
+                            <i data-lucide="users" class="w-8 h-8"></i>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">Passengers Today</p>
+                            <p id="stat-passengers" class="text-2xl font-bold text-slate-800">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 shadow-sm border border-slate-100 flex items-center gap-4">
+                        <div class="bg-amber-100 p-4 rounded-lg text-amber-600">
+                            <i data-lucide="history" class="w-8 h-8"></i>
+                        </div>
+                        <div>
+                            <p class="text-slate-500 text-sm font-medium">Recent Update</p>
+                            <p id="stat-recent" class="text-lg font-bold text-slate-800 truncate">No data yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADD DATA TAB -->
+            <div id="tab-add-data" class="tab-content animate-fadeIn pb-12">
+                <form id="flight-form" class="space-y-8">
+                    <div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex-col sm:flex-row gap-4">
+                        <div>
+                            <h2 id="form-main-title" class="text-2xl font-bold text-slate-800">New Flight Information</h2>
+                            <p id="form-sub-title" class="text-slate-500 text-sm mt-1">Fill in the details below. Data will be saved to Google Sheets.</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button type="button" id="cancel-edit-btn" onclick="cancelEdit()" class="hidden bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-all w-full sm:w-auto">
+                                Cancel Edit
+                            </button>
+                            <button type="submit" id="submit-btn" class="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-70 w-full sm:w-auto">
+                                <i data-lucide="save" id="save-icon" class="w-5 h-5"></i>
+                                <span id="submit-text">Submit Data</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- General & Crew Info -->
+                    <div class="flex flex-col gap-6">
+                        <!-- GENERAL INFORMATION -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-16 bg-blue-50/50 rounded-bl-full -z-10 w-64 h-64"></div>
+                            <div class="flex items-center gap-2 mb-6 text-slate-800 border-b pb-3">
+                                <i data-lucide="plane" class="w-6 h-6 text-blue-500"></i>
+                                <h3 class="text-xl font-bold">General Information</h3>
+                            </div>
+                            
+                            <div class="flex flex-col lg:flex-row gap-8">
+                                <!-- Form Fields Left Side -->
+                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                                    
+                                    <!-- Sub-group: Flight & Pax -->
+                                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pb-2 border-b border-slate-100 border-dashed">
+                                        <h4 class="text-sm font-bold text-slate-600 flex items-center gap-2"><i data-lucide="calendar" class="w-4 h-4"></i> Flight & Passenger Detail</h4>
+                                    </div>
+                                    
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                                        <input type="date" name="date" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" required>
+                                    </div>
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Lead Passenger</label>
+                                        <input type="text" name="leadPassenger" placeholder="e.g. Mr. John Doe" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+                                    </div>
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Lead Contact</label>
+                                        <input type="text" name="leadContact" placeholder="Phone / Email" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all">
+                                    </div>
+
+                                    <!-- Sub-group: Aircraft -->
+                                    <div class="col-span-1 sm:col-span-2 lg:col-span-3 pb-2 border-b border-slate-100 border-dashed mt-2">
+                                        <h4 class="text-sm font-bold text-slate-600 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> Aircraft Detail</h4>
+                                    </div>
+
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Aircraft Reg</label>
+                                        <div class="flex gap-2">
+                                            <select name="aircraftReg" id="select-aircraft" onchange="autoFillAircraft(this.value)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-blue-700 transition-all" required>
+                                                <option value="">Select A/C</option>
+                                            </select>
+                                            <button type="button" onclick="openMasterModal('Aircrafts')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3.5 rounded-lg border border-blue-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Aircraft Type</label>
+                                        <input type="text" name="aircraftType" id="input-aircraft-type" placeholder="Auto-filled type" class="w-full px-4 py-2.5 bg-slate-100/70 border border-slate-200 rounded-lg outline-none text-sm cursor-not-allowed text-slate-500" readonly required>
+                                        
+                                        <!-- Hidden Input for Aircraft Picture Profile URL -->
+                                        <input type="hidden" name="aircraftPicUrl" id="hidden-aircraft-pic">
+                                    </div>
+                                </div>
+                                
+                                <!-- Aircraft Picture Preview Right Side -->
+                                <div class="w-full lg:w-72 flex-shrink-0 flex flex-col">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 hidden lg:block">Aircraft Profile</label>
+                                    <div class="w-full h-56 lg:flex-1 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-2 overflow-hidden relative group" id="aircraft-pic-preview">
+                                        <i data-lucide="image" class="w-8 h-8 text-slate-300 mb-2 group-hover:text-blue-400 transition-colors"></i>
+                                        <span class="text-xs text-slate-400 font-medium text-center">No Aircraft<br>Image</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CREW INFORMATION -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-16 bg-amber-50/50 rounded-bl-full -z-10 w-64 h-64"></div>
+                            <div class="flex items-center gap-2 mb-6 text-slate-800 border-b pb-3">
+                                <i data-lucide="users" class="w-6 h-6 text-amber-500"></i>
+                                <h3 class="text-xl font-bold">Crew Information</h3>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <!-- Sub-group: Flight Deck -->
+                                <div class="col-span-1 md:col-span-2 lg:col-span-4 pb-2 border-b border-slate-100 border-dashed">
+                                    <h4 class="text-sm font-bold text-slate-600 flex items-center gap-2"><i data-lucide="swords" class="w-4 h-4"></i> Flight Deck</h4>
+                                </div>
+
+                                <!-- PIC -->
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pilot in Command</label>
+                                    <div class="flex gap-2">
+                                        <select name="crewPic" id="select-pic" onchange="autoFillCrew(this.value, 'crewPicPhone')" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select" required>
+                                            <option value="">Select PIC</option>
+                                        </select>
+                                        <button type="button" onclick="openMasterModal('Crews')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3.5 rounded-lg border border-amber-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">PIC Phone</label>
+                                    <input type="text" name="crewPicPhone" id="crewPicPhone" placeholder="Auto-filled" class="w-full px-4 py-2.5 bg-slate-100/70 border border-slate-200 rounded-lg outline-none text-sm cursor-not-allowed text-slate-500" readonly>
+                                </div>
+                                
+                                <!-- SIC -->
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Second in Command</label>
+                                    <div class="flex gap-2">
+                                        <select name="crewSic" id="select-sic" onchange="autoFillCrew(this.value, 'crewSicPhone')" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select">
+                                            <option value="">Select SIC</option>
+                                        </select>
+                                        <button type="button" onclick="openMasterModal('Crews')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3.5 rounded-lg border border-amber-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">SIC Phone</label>
+                                    <input type="text" name="crewSicPhone" id="crewSicPhone" placeholder="Auto-filled" class="w-full px-4 py-2.5 bg-slate-100/70 border border-slate-200 rounded-lg outline-none text-sm cursor-not-allowed text-slate-500" readonly>
+                                </div>
+                                
+                                <!-- Sub-group: Cabin & Technical -->
+                                <div class="col-span-1 md:col-span-2 lg:col-span-4 pb-2 border-b border-slate-100 border-dashed mt-2">
+                                    <h4 class="text-sm font-bold text-slate-600 flex items-center gap-2"><i data-lucide="wrench" class="w-4 h-4"></i> Cabin & Technical</h4>
+                                </div>
+
+                                <!-- Engineer -->
+                                <div class="col-span-1 md:col-span-2 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Flight Engineer</label>
+                                    <div class="flex gap-2">
+                                        <select name="crewEngineer" id="select-eng" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select">
+                                            <option value="">Select Engineer</option>
+                                        </select>
+                                        <button type="button" onclick="openMasterModal('Crews')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3.5 rounded-lg border border-amber-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+
+                                <!-- Cabin -->
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Service</label>
+                                    <div class="flex gap-2">
+                                        <select name="crewCabin" id="select-cabin" onchange="autoFillCrew(this.value, 'crewCabinPhone')" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-amber-500 outline-none text-sm font-semibold text-slate-700 crew-select">
+                                            <option value="">Select Cabin</option>
+                                        </select>
+                                        <button type="button" onclick="openMasterModal('Crews')" class="bg-amber-100 hover:bg-amber-200 text-amber-700 px-3.5 rounded-lg border border-amber-200 transition-colors shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                                <div class="col-span-1 flex flex-col gap-1.5">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cabin Phone</label>
+                                    <input type="text" name="crewCabinPhone" id="crewCabinPhone" placeholder="Auto-filled" class="w-full px-4 py-2.5 bg-slate-100/70 border border-slate-200 rounded-lg outline-none text-sm cursor-not-allowed text-slate-500" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Route Information -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="flex justify-between items-center mb-6 border-b pb-3">
+                            <div class="flex items-center gap-2 text-slate-800">
+                                <i data-lucide="plane-takeoff" class="w-5 h-5 text-blue-500"></i>
+                                <h3 class="text-lg font-bold">Route Information</h3>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="openMasterModal('Locations')" class="text-sm text-amber-600 flex items-center gap-1 font-medium hover:text-amber-800 bg-amber-50 px-2 py-1 rounded">
+                                    <i data-lucide="map-pin" class="w-4 h-4"></i> New Location
+                                </button>
+                                <button type="button" onclick="addRow('routes')" class="text-sm text-blue-600 flex items-center gap-1 font-medium hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Add Route
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <!-- Datalist for Locations -->
+                            <datalist id="locations-list"></datalist>
+
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-3 py-2 rounded-l-lg">Leg</th>
+                                        <th class="px-3 py-2">Date</th>
+                                        <th class="px-3 py-2">From</th>
+                                        <th class="px-3 py-2">To</th>
+                                        <th class="px-3 py-2">ETD (Lcl)</th>
+                                        <th class="px-3 py-2">ETA (Lcl)</th>
+                                        <th class="px-3 py-2">Flt Time</th>
+                                        <th class="px-3 py-2">Remark</th>
+                                        <th class="px-3 py-2 rounded-r-lg"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="routes-container">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Passenger Information -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="flex justify-between items-center mb-6 border-b pb-3">
+                            <div class="flex items-center gap-2 text-slate-800">
+                                <i data-lucide="users" class="w-5 h-5 text-blue-500"></i>
+                                <h3 class="text-lg font-bold">Passenger Information</h3>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="openMasterModal('Passengers')" class="text-sm text-amber-600 flex items-center gap-1 font-medium hover:text-amber-800 bg-amber-50 px-2 py-1 rounded">
+                                    <i data-lucide="user-plus" class="w-4 h-4"></i> New Pax Data
+                                </button>
+                                <button type="button" onclick="addRow('passengers')" class="text-sm text-blue-600 flex items-center gap-1 font-medium hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Add Passenger
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                                    <tr>
+                                        <th class="px-3 py-2 rounded-l-lg w-12 text-center">No</th>
+                                        <th class="px-3 py-2 w-24">Leg</th>
+                                        <th class="px-3 py-2 min-w-[180px]">Passenger Name</th>
+                                        <th class="px-3 py-2 w-32">Sex</th>
+                                        <th class="px-3 py-2 rounded-r-lg"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="passengers-container">
+                                    <!-- Dynamic passenger blocks -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Ground Handling & Slots -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                                <div class="flex items-center gap-2 text-slate-800">
+                                    <i data-lucide="briefcase" class="w-5 h-5 text-blue-500"></i>
+                                    <h3 class="text-lg font-bold">Ground Handling</h3>
+                                </div>
+                                <button type="button" onclick="addRow('groundHandling')" class="text-xs text-blue-600 flex items-center"><i data-lucide="plus" class="w-3 h-3"></i> Add</button>
+                            </div>
+                            <div class="space-y-4" id="groundHandling-container">
+                                <!-- Dynamic ground handling blocks -->
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                                <div class="flex items-center gap-2 text-slate-800">
+                                    <i data-lucide="parking-circle" class="w-5 h-5 text-blue-500"></i>
+                                    <h3 class="text-lg font-bold">Slot Information</h3>
+                                </div>
+                                <button type="button" onclick="addRow('slots')" class="text-xs text-blue-600 flex items-center"><i data-lucide="plus" class="w-3 h-3"></i> Add</button>
+                            </div>
+                            <div class="space-y-4" id="slots-container">
+                                <!-- Dynamic slots blocks -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Accomodation & Transport -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                                <div class="flex items-center gap-2 text-slate-800">
+                                    <i data-lucide="hotel" class="w-5 h-5 text-blue-500"></i>
+                                    <h3 class="text-lg font-bold">Accommodation</h3>
+                                </div>
+                                <button type="button" onclick="addRow('accommodations')" class="text-xs text-blue-600 flex items-center"><i data-lucide="plus" class="w-3 h-3"></i> Add</button>
+                            </div>
+                            <div class="space-y-4" id="accommodations-container">
+                                <!-- Dynamic accommodation blocks -->
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                            <div class="flex justify-between items-center mb-6 border-b pb-3">
+                                <div class="flex items-center gap-2 text-slate-800">
+                                    <i data-lucide="car" class="w-5 h-5 text-blue-500"></i>
+                                    <h3 class="text-lg font-bold">Transport Info</h3>
+                                </div>
+                                <button type="button" onclick="addRow('transports')" class="text-xs text-blue-600 flex items-center"><i data-lucide="plus" class="w-3 h-3"></i> Add</button>
+                            </div>
+                            <div class="space-y-4" id="transports-container">
+                                <!-- Dynamic transport blocks -->
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- HISTORY TAB -->
+            <div id="tab-history" class="tab-content animate-fadeIn">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between md:items-center gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Flight History</h2>
+                            <p class="text-slate-500 text-sm mt-1">List of previously submitted flight information. Click a row to view details.</p>
+                        </div>
+                        <button onclick="syncData()" id="btn-sync-history" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors border border-blue-200 shadow-sm">
+                            <i data-lucide="refresh-cw" id="icon-sync-history" class="w-4 h-4"></i> Sync with Cloud
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="px-6 py-4">Date Submited</th>
+                                    <th class="px-6 py-4">Flight Date</th>
+                                    <th class="px-6 py-4">A/C Reg</th>
+                                    <th class="px-6 py-4">A/C Type</th>
+                                    <th class="px-6 py-4">PIC</th>
+                                    <th class="px-6 py-4">Routes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <!-- Rendered via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Master Data Modal -->
+    <div id="master-modal" class="fixed inset-0 bg-slate-900/60 z-[110] hidden flex items-center justify-center p-4 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-slideUp">
+            <form id="master-form" onsubmit="handleMasterSubmit(event)">
+                <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
+                    <h3 id="master-title" class="font-bold text-lg text-slate-800 flex items-center gap-2">
+                        <i data-lucide="database" class="w-5 h-5 text-amber-500"></i> Add Master Data
+                    </h3>
+                    <button type="button" onclick="closeMasterModal()" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="p-6 space-y-4" id="master-fields-container">
+                    <!-- Dynamic fields injected here -->
+                </div>
+                <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+                    <button type="button" onclick="closeMasterModal()" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" id="master-submit-btn" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                        <i data-lucide="save" id="master-save-icon" class="w-4 h-4"></i> <span id="master-submit-text">Save Data</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Detail Modal -->
+    <div id="detail-modal" class="fixed inset-0 bg-slate-900/60 z-[100] hidden flex items-center justify-center p-4 lg:p-10 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-full flex flex-col overflow-hidden animate-slideUp">
+            <!-- Header Actions -->
+            <div class="flex justify-between items-center p-4 border-b border-slate-200 bg-slate-50">
+                <h3 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="file-text" class="w-5 h-5 text-blue-500"></i> Detail Flight Data</h3>
+                <div class="flex flex-wrap md:flex-nowrap items-center gap-2">
+                    <button id="btn-edit" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors"><i data-lucide="edit" class="w-4 h-4"></i> <span class="hidden sm:inline">Edit Data</span></button>
+                    <button onclick="downloadPDF()" class="bg-slate-800 text-white hover:bg-slate-900 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors shadow-lg"><i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:inline">Download</span></button>
+                    <button onclick="closeDetailModal()" class="text-slate-400 hover:text-red-500 ml-1 sm:ml-3 p-1"><i data-lucide="x" class="w-6 h-6"></i></button>
+                </div>
+            </div>
+            <!-- Scrollable Content -->
+            <div class="overflow-y-auto bg-slate-100 flex-1">
+                <div class="overflow-x-auto w-full h-full">
+                    <div id="pdf-container" class="min-w-[800px] mx-auto bg-white min-h-full">
+                        <div id="pdf-content" class="text-slate-800 bg-white p-8">
+                            <!-- Dynamic Detail Data Goes Here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 px-6 py-4 rounded-lg shadow-xl flex items-center gap-3 text-white animate-slideUp z-50 hidden">
+        <i id="toast-icon" class="w-5 h-5"></i>
+        <p id="toast-message" class="font-medium"></p>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // --- CONFIGURATION ---
+        const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz9XucYwgQkk3pVt3SI6YIkCAExEFO36bCrp_wjIrwQeNKhvCTD0i7fr-aTZ0PSEpJO/exec";
+
+        // Application State
+        const state = {
+            routes: [{ leg: 1, date: '', from: '', to: '', etd: '', eta: '', fltTime: '', remark: 'Movement' }],
+            passengers: [{ no: 1, leg: '', name: '', sex: 'Male' }],
+            groundHandling: [{ airport: '', handler: '', phone: '', pic: '', cell: '' }],
+            slots: [{ leg: '', landingAt: '', status: '', parkingStand: '', otherInfo: '' }],
+            accommodations: [{ hotelName: '', address: '', phone: '', picName: '', cellNo: '' }],
+            transports: [{ location: '', transportBy: '', driverName: '', cellNo: '' }]
+        };
+
+        // Master Data Cache
+        let masterData = {
+            aircrafts: [],
+            crews: [],
+            locations: [],
+            passengers: []
+        };
+        let currentMasterSheet = '';
+
+        const defaultRows = {
+            routes: { leg: '', date: '', from: '', to: '', etd: '', eta: '', fltTime: '', remark: 'Movement' },
+            passengers: { no: '', leg: '', name: '', sex: 'Male' },
+            groundHandling: { airport: '', handler: '', phone: '', pic: '', cell: '' },
+            slots: { leg: '', landingAt: '', status: '', parkingStand: '', otherInfo: '' },
+            accommodations: { hotelName: '', address: '', phone: '', picName: '', cellNo: '' },
+            transports: { location: '', transportBy: '', driverName: '', cellNo: '' }
+        };
+
+        let historyData = [];
+        let currentEditIndex = -1;
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Load history
+            const saved = localStorage.getItem('ecrewHistory');
+            if (saved) {
+                historyData = JSON.parse(saved);
+                updateDashboardStats();
+            }
+
+            // Initial render of dynamic arrays
+            Object.keys(state).forEach(section => renderSection(section));
+
+            // Form Submit Listener
+            document.getElementById('flight-form').addEventListener('submit', handleSubmit);
+
+            // Handle Dynamic Input changes without re-rendering to keep focus
+            document.getElementById('flight-form').addEventListener('input', handleDynamicInput);
+            
+            // Mobile menu listener
+            document.getElementById('mobile-menu-btn').addEventListener('click', toggleSidebar);
+
+            // Auto-sync data on load
+            syncData();
+        });
+
+        // --- MASTER DATA LOGIC ---
+        function populateDropdowns() {
+            // Aircrafts
+            const acSelect = document.getElementById('select-aircraft');
+            acSelect.innerHTML = '<option value="">Select A/C</option>' + masterData.aircrafts.map(a => `<option value="${a.reg}">${a.reg}</option>`).join('');
+
+            // Crews
+            const crewOptions = '<option value="">Select Crew</option>' + masterData.crews.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            document.querySelectorAll('.crew-select').forEach(select => {
+                const currentVal = select.value;
+                select.innerHTML = crewOptions;
+                select.value = currentVal; // Restore selection if any
+            });
+
+            // Locations (Datalist for Routes)
+            const locList = document.getElementById('locations-list');
+            if(locList) {
+                locList.innerHTML = masterData.locations.map(l => `<option value="${l.icao}">`).join('');
+            }
+            
+            // Re-render sections that might need updated dropdown options (like Passengers)
+            renderSection('passengers');
+        }
+
+        function autoFillAircraft(reg) {
+            const ac = masterData.aircrafts.find(a => a.reg === reg);
+            document.getElementById('input-aircraft-type').value = ac ? ac.type : '';
+            
+            // Auto Update Picture Profile
+            const picPreview = document.getElementById('aircraft-pic-preview');
+            const hiddenPic = document.getElementById('hidden-aircraft-pic');
+            
+            if (ac && ac.picUrl) {
+                picPreview.innerHTML = `<img src="${ac.picUrl}" alt="Logo" class="w-full h-full object-contain rounded-lg" />`;
+                if(hiddenPic) hiddenPic.value = ac.picUrl;
+            } else {
+                picPreview.innerHTML = `
+                    <i data-lucide="image" class="w-8 h-8 text-slate-300 mb-2 group-hover:text-blue-400 transition-colors"></i>
+                    <span class="text-xs text-slate-400 font-medium text-center">No Aircraft<br>Image</span>
+                `;
+                if(hiddenPic) hiddenPic.value = '';
+                lucide.createIcons();
+            }
+        }
+
+        function autoFillCrew(name, targetInputId) {
+            const crew = masterData.crews.find(c => c.name === name);
+            document.getElementById(targetInputId).value = crew ? crew.phone : '';
+        }
+
+        function autoFillPassenger(selectEl, index) {
+            const name = selectEl.value;
+            const pax = masterData.passengers.find(p => p.name === name);
+            if (pax) {
+                state.passengers[index].name = name;
+                state.passengers[index].sex = pax.sex;
+                renderSection('passengers');
+            }
+        }
+
+        // Modal Master Data Logic
+        function openMasterModal(sheetName) {
+            currentMasterSheet = sheetName;
+            const container = document.getElementById('master-fields-container');
+            const title = document.getElementById('master-title');
+            
+            let html = '';
+            if (sheetName === 'Aircrafts') {
+                title.innerHTML = `<i data-lucide="plane" class="w-5 h-5 text-amber-500"></i> Add New Aircraft`;
+                html = `
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Registration (e.g. PK-ABC)</label><input type="text" name="reg" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 uppercase" required></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Aircraft Type</label><input type="text" name="type" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 uppercase" required></div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-semibold text-slate-600">Picture Profile URL</label>
+                        <input type="text" name="picUrl" placeholder="https://lh3.googleusercontent.com/d/..." class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
+                        <p class="text-[10px] text-slate-500 mt-1">Paste the direct link of the aircraft image.</p>
+                    </div>
+                `;
+            } else if (sheetName === 'Crews') {
+                title.innerHTML = `<i data-lucide="user" class="w-5 h-5 text-amber-500"></i> Add New Crew`;
+                html = `
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Full Name</label><input type="text" name="name" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Phone Number</label><input type="text" name="phone" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500"></div>
+                `;
+            } else if (sheetName === 'Locations') {
+                title.innerHTML = `<i data-lucide="map-pin" class="w-5 h-5 text-amber-500"></i> Add New Route Location`;
+                html = `
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">ICAO Code (e.g. WIII)</label><input type="text" name="icao" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 uppercase" required></div>
+                `;
+            } else if (sheetName === 'Passengers') {
+                title.innerHTML = `<i data-lucide="users" class="w-5 h-5 text-amber-500"></i> Add New Passenger`;
+                html = `
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Full Name</label><input type="text" name="name" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required></div>
+                    <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Sex</label>
+                        <select name="sex" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="Male">Male</option><option value="Female">Female</option><option value="Child">Child</option><option value="Infant">Infant</option>
+                        </select>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+            document.getElementById('master-modal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeMasterModal() {
+            document.getElementById('master-modal').classList.add('hidden');
+            document.getElementById('master-form').reset();
+        }
+
+        async function handleMasterSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('master-submit-btn');
+            const icon = document.getElementById('master-save-icon');
+            const text = document.getElementById('master-submit-text');
+            
+            btn.disabled = true;
+            text.innerText = 'Saving...';
+            icon.setAttribute('data-lucide', 'loader-2');
+            icon.classList.add('animate-spin');
+            lucide.createIcons();
+
+            const formData = new FormData(e.target);
+            const dataObj = {};
+            
+            // Pengecualian agar URL Gambar tidak berubah menjadi Huruf Besar semua (Uppercase)
+            formData.forEach((val, key) => {
+                if (key === 'picUrl') {
+                    dataObj[key] = val; // Biarkan URL tetap original
+                } else {
+                    dataObj[key] = val.toUpperCase() || val;
+                }
+            });
+
+            const payload = {
+                action: "addMasterData",
+                sheet: currentMasterSheet,
+                data: dataObj
+            };
+
+            try {
+                await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                // Optimistic update locally
+                masterData[currentMasterSheet.toLowerCase()].push(dataObj);
+                populateDropdowns();
+                showToast(currentMasterSheet + ' data successfully added!', 'success');
+                closeMasterModal();
+            } catch (error) {
+                console.error('Error adding master data:', error);
+                showToast('Failed to add master data. Check network.', 'warning');
+            } finally {
+                btn.disabled = false;
+                text.innerText = 'Save Data';
+                icon.setAttribute('data-lucide', 'save');
+                icon.classList.remove('animate-spin');
+                lucide.createIcons();
+            }
+        }
+
+        // --- NAVIGATION ---
+        function switchTab(tabId) {
+            // Update buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if(btn.dataset.tab === tabId) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('hover:bg-slate-800', 'hover:text-white');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('hover:bg-slate-800', 'hover:text-white');
+                }
+            });
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            if(tabId === 'history') {
+                renderHistory();
+            }
+            if(tabId === 'dashboard') {
+                updateDashboardStats();
+            }
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const menuIcon = document.getElementById('menu-icon');
+            
+            if (sidebar.classList.contains('sidebar-closed')) {
+                sidebar.classList.remove('sidebar-closed');
+                sidebar.classList.add('sidebar-open');
+                menuIcon.setAttribute('data-lucide', 'x');
+            } else {
+                sidebar.classList.remove('sidebar-open');
+                sidebar.classList.add('sidebar-closed');
+                menuIcon.setAttribute('data-lucide', 'menu');
+            }
+            lucide.createIcons();
+        }
+
+        // --- DYNAMIC FORM LOGIC ---
+        function handleDynamicInput(e) {
+            const target = e.target;
+            const section = target.dataset.section;
+            const index = target.dataset.index;
+            const field = target.name;
+
+            if (section && index !== undefined && field) {
+                state[section][index][field] = target.value;
+            }
+        }
+
+        function addRow(section) {
+            const newItem = { ...defaultRows[section] };
+            if(section === 'routes' || section === 'passengers') {
+                newItem.leg = state[section].length + 1;
+                if(section === 'passengers') newItem.no = state[section].length + 1;
+            }
+            state[section].push(newItem);
+            renderSection(section);
+        }
+
+        function removeRow(section, index) {
+            state[section].splice(index, 1);
+            renderSection(section);
+        }
+
+        function renderSection(section) {
+            const container = document.getElementById(`${section}-container`);
+            const data = state[section];
+            let html = '';
+
+            data.forEach((item, i) => {
+                if (section === 'routes') {
+                    // Changed From and To to use input list="locations-list"
+                    // Added min-w-[...] to ensure columns don't shrink too much
+                    html += `
+                    <tr class="border-b border-slate-100 last:border-0">
+                        <td class="px-3 py-2"><input type="number" data-section="${section}" data-index="${i}" name="leg" class="w-16 p-2 bg-slate-50 rounded border border-slate-200" value="${item.leg}"></td>
+                        <td class="px-3 py-2"><input type="date" data-section="${section}" data-index="${i}" name="date" class="w-full min-w-[130px] p-2 bg-slate-50 rounded border border-slate-200" value="${item.date}"></td>
+                        <td class="px-3 py-2"><input type="text" list="locations-list" data-section="${section}" data-index="${i}" name="from" class="w-full min-w-[120px] p-2 bg-slate-50 rounded border border-slate-200 uppercase" value="${item.from}" placeholder="ICAO"></td>
+                        <td class="px-3 py-2"><input type="text" list="locations-list" data-section="${section}" data-index="${i}" name="to" class="w-full min-w-[120px] p-2 bg-slate-50 rounded border border-slate-200 uppercase" value="${item.to}" placeholder="ICAO"></td>
+                        <td class="px-3 py-2"><input type="time" data-section="${section}" data-index="${i}" name="etd" class="w-full min-w-[100px] p-2 bg-slate-50 rounded border border-slate-200" value="${item.etd}"></td>
+                        <td class="px-3 py-2"><input type="time" data-section="${section}" data-index="${i}" name="eta" class="w-full min-w-[100px] p-2 bg-slate-50 rounded border border-slate-200" value="${item.eta}"></td>
+                        <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="fltTime" class="w-24 p-2 bg-slate-50 rounded border border-slate-200" value="${item.fltTime}" placeholder="00:00"></td>
+                        <td class="px-3 py-2">
+                            <select data-section="${section}" data-index="${i}" name="remark" class="w-32 p-2 bg-slate-50 rounded border border-slate-200">
+                                <option value="Movement" ${item.remark === 'Movement' ? 'selected' : ''}>Movement</option>
+                                <option value="Pax Onboard" ${item.remark === 'Pax Onboard' ? 'selected' : ''}>Pax Onboard</option>
+                                <option value="Medevac" ${item.remark === 'Medevac' ? 'selected' : ''}>Medevac</option>
+                            </select>
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <button type="button" onclick="removeRow('${section}', ${i})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>`;
+                } 
+                else if (section === 'passengers') {
+                    // Changed input text Name to select from Master Data
+                    const paxOptions = '<option value="">Select Pax</option>' + masterData.passengers.map(p => `<option value="${p.name}" ${item.name === p.name ? 'selected' : ''}>${p.name}</option>`).join('');
+                    html += `
+                    <tr class="border-b border-slate-100 last:border-0">
+                        <td class="px-3 py-2 text-center text-slate-400 font-bold">#${i + 1}</td>
+                        <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="leg" class="w-full p-2 bg-slate-50 rounded border border-slate-200" value="${item.leg}" placeholder="Leg"></td>
+                        <td class="px-3 py-2">
+                            <select data-section="${section}" data-index="${i}" name="name" onchange="autoFillPassenger(this, ${i})" class="w-full p-2 bg-white rounded border border-slate-200">
+                                ${paxOptions}
+                            </select>
+                        </td>
+                        <td class="px-3 py-2">
+                            <select data-section="${section}" data-index="${i}" name="sex" class="w-full p-2 bg-slate-100 rounded border border-slate-200 pointer-events-none" tabindex="-1" readonly>
+                                <option value="Male" ${item.sex === 'Male' ? 'selected' : ''}>Male</option>
+                                <option value="Female" ${item.sex === 'Female' ? 'selected' : ''}>Female</option>
+                                <option value="Child" ${item.sex === 'Child' ? 'selected' : ''}>Child</option>
+                                <option value="Infant" ${item.sex === 'Infant' ? 'selected' : ''}>Infant</option>
+                            </select>
+                        </td>
+                        <td class="px-3 py-2 text-right">
+                            <button type="button" onclick="removeRow('${section}', ${i})" class="text-red-400 hover:text-red-600"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>`;
+                }
+                else if (section === 'groundHandling') {
+                    html += `
+                    <div class="space-y-2 bg-slate-50 p-3 rounded border border-slate-100 relative">
+                        <button type="button" onclick="removeRow('${section}', ${i})" class="absolute top-2 right-2 text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-0 pr-6 sm:pr-8">
+                            <input type="text" data-section="${section}" data-index="${i}" name="airport" placeholder="Airport" class="p-2 text-sm border rounded w-full" value="${item.airport}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="handler" placeholder="Handled By" class="p-2 text-sm border rounded w-full" value="${item.handler}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="phone" placeholder="Office Phone" class="p-2 text-sm border rounded w-full" value="${item.phone}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="pic" placeholder="PIC Name" class="p-2 text-sm border rounded w-full" value="${item.pic}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="cell" placeholder="Cell Number" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.cell}">
+                        </div>
+                    </div>`;
+                }
+                else if (section === 'slots') {
+                    html += `
+                    <div class="space-y-2 bg-slate-50 p-3 rounded border border-slate-100 relative">
+                        <button type="button" onclick="removeRow('${section}', ${i})" class="absolute top-2 right-2 text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-0 pr-6 sm:pr-8">
+                            <input type="text" data-section="${section}" data-index="${i}" name="leg" placeholder="Leg" class="p-2 text-sm border rounded w-full" value="${item.leg}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="landingAt" placeholder="Landing At" class="p-2 text-sm border rounded w-full" value="${item.landingAt}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="status" placeholder="Status" class="p-2 text-sm border rounded w-full" value="${item.status}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="parkingStand" placeholder="Parking Stand" class="p-2 text-sm border rounded w-full" value="${item.parkingStand}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="otherInfo" placeholder="Other Info" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.otherInfo}">
+                        </div>
+                    </div>`;
+                }
+                else if (section === 'accommodations') {
+                    html += `
+                    <div class="bg-slate-50 p-3 rounded border border-slate-100 relative">
+                        <button type="button" onclick="removeRow('${section}', ${i})" class="absolute top-2 right-2 text-red-400 z-10"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-0 pr-6 sm:pr-8">
+                            <input type="text" data-section="${section}" data-index="${i}" name="hotelName" placeholder="Hotel Name" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.hotelName}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="address" placeholder="Address" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.address}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="phone" placeholder="Phone No" class="p-2 text-sm border rounded w-full" value="${item.phone}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="picName" placeholder="PIC Name" class="p-2 text-sm border rounded w-full" value="${item.picName}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="cellNo" placeholder="Cell No" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.cellNo}">
+                        </div>
+                    </div>`;
+                }
+                else if (section === 'transports') {
+                    html += `
+                    <div class="bg-slate-50 p-3 rounded border border-slate-100 relative">
+                        <button type="button" onclick="removeRow('${section}', ${i})" class="absolute top-2 right-2 text-red-400 z-10"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 sm:mt-0 pr-6 sm:pr-8">
+                            <input type="text" data-section="${section}" data-index="${i}" name="location" placeholder="Location" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.location}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="transportBy" placeholder="Transport By" class="col-span-1 sm:col-span-2 p-2 text-sm border rounded w-full" value="${item.transportBy}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="driverName" placeholder="Driver Name" class="p-2 text-sm border rounded w-full" value="${item.driverName}">
+                            <input type="text" data-section="${section}" data-index="${i}" name="cellNo" placeholder="Cell No" class="p-2 text-sm border rounded w-full" value="${item.cellNo}">
+                        </div>
+                    </div>`;
+                }
+            });
+
+            container.innerHTML = html;
+            lucide.createIcons(); // Re-initialize icons for newly added HTML
+        }
+
+        // --- SUBMIT AND API ---
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            // UI Loading state
+            const btn = document.getElementById('submit-btn');
+            const icon = document.getElementById('save-icon');
+            const text = document.getElementById('submit-text');
+            
+            btn.disabled = true;
+            text.innerText = 'Saving...';
+            icon.setAttribute('data-lucide', 'loader-2');
+            icon.classList.add('animate-spin');
+            lucide.createIcons();
+
+            // Gather standard form values
+            const formDataObj = new FormData(e.target);
+            // Menambahkan aircraftPicUrl ke dalam field yang akan disubmit ke Sheets
+            const standardFields = ['date', 'aircraftReg', 'aircraftType', 'aircraftPicUrl', 'leadPassenger', 'leadContact', 'crewPic', 'crewPicPhone', 'crewSic', 'crewSicPhone', 'crewEngineer', 'crewCabin', 'crewCabinPhone'];
+            
+            const flightData = {
+                timestamp: getFormattedTimestamp(),
+                routesJSON: JSON.stringify(state.routes),
+                passengersJSON: JSON.stringify(state.passengers),
+                groundHandlingJSON: JSON.stringify(state.groundHandling),
+                slotsJSON: JSON.stringify(state.slots),
+                accommodationsJSON: JSON.stringify(state.accommodations),
+                transportsJSON: JSON.stringify(state.transports)
+            };
+
+            standardFields.forEach(field => {
+                flightData[field] = formDataObj.get(field) || '';
+            });
+
+            // Action payload modified for the new backend
+            const payload = {
+                action: "addFlight",
+                data: flightData
+            }
+
+            try {
+                // Fetch POST to Google Apps Script
+                await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // Save locally
+                if(currentEditIndex > -1) {
+                    historyData[currentEditIndex] = flightData; // Update existing
+                    showToast('Flight data successfully updated!', 'success');
+                } else {
+                    historyData.unshift(flightData); // Add new
+                    showToast('Flight data successfully submitted to Google Sheets!', 'success');
+                }
+                localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
+                updateDashboardStats();
+                
+                // Reset Form
+                resetForm();
+                switchTab('history');
+            } catch (error) {
+                console.error('Submission error:', error);
+                
+                // Fallback Offline save
+                if(currentEditIndex > -1) {
+                    historyData[currentEditIndex] = payload;
+                } else {
+                    historyData.unshift(payload);
+                }
+                localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
+                updateDashboardStats();
+                
+                showToast('Saved locally. Note: Google Sheet connection failed.', 'warning');
+                
+                resetForm();
+                switchTab('history');
+            } finally {
+                // Restore UI
+                btn.disabled = false;
+                text.innerText = 'Submit Data';
+                icon.setAttribute('data-lucide', 'save');
+                icon.classList.remove('animate-spin');
+                lucide.createIcons();
+            }
+        }
+
+        // --- UTILS & HISTORY ---
+        
+        // Fungsi baru: Membuat format tanggal Indonesia khusus untuk Google Sheets
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+            
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = months[now.getMonth()];
+            const y = now.getFullYear();
+            
+            const hr = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const sec = String(now.getSeconds()).padStart(2, '0');
+            
+            return `${d} ${m} ${y} / ${hr}:${min}:${sec}`;
+        }
+
+        // Fungsi baru: Mengubah kembali format khusus menjadi angka waktu untuk diurutkan (Sorting History)
+        function parseCustomTimestamp(ts) {
+            if (!ts) return 0;
+            const strTs = String(ts);
+            
+            if (strTs.includes(' / ')) {
+                const parts = strTs.split(' / ');
+                if (parts.length === 2) {
+                    const dateParts = parts[0].split(' ');
+                    const timeParts = parts[1].split(':');
+                    const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+                    const monthIdx = months.indexOf(dateParts[1]);
+                    
+                    if (monthIdx > -1 && dateParts.length === 3 && timeParts.length === 3) {
+                         return new Date(dateParts[2], monthIdx, dateParts[0], timeParts[0], timeParts[1], timeParts[2]).getTime();
+                    }
+                }
+            }
+            // Fallback untuk format data ISO lama yang mungkin sudah ada di sheet
+            const d = new Date(ts);
+            return isNaN(d.getTime()) ? 0 : d.getTime();
+        }
+
+        function resetForm() {
+            document.getElementById('flight-form').reset();
+            Object.keys(state).forEach(k => state[k] = [{...defaultRows[k]}]);
+            Object.keys(state).forEach(k => renderSection(k));
+            currentEditIndex = -1;
+            
+            // Kembalikan UI menjadi mode "New Data"
+            document.getElementById('submit-text').innerText = 'Submit Data';
+            document.getElementById('form-main-title').innerText = 'New Flight Information';
+            document.getElementById('form-sub-title').innerText = 'Fill in the details below. Data will be saved to Google Sheets.';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            
+            // Clear Aircraft Image Preview
+            const picContainer = document.getElementById('aircraft-pic-preview');
+            if(picContainer) {
+                picContainer.innerHTML = `
+                    <i data-lucide="image" class="w-8 h-8 text-slate-300 mb-2"></i>
+                    <span class="text-xs text-slate-400 font-medium text-center">No Aircraft<br>Image</span>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        function saveToHistory(payload) {
+            historyData.unshift(payload);
+            localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
+            updateDashboardStats();
+        }
+
+        function updateDashboardStats() {
+            document.getElementById('stat-total-flights').innerText = historyData.length;
+            
+            const totalPax = historyData.reduce((acc, curr) => {
+                try {
+                    const pax = JSON.parse(curr.passengersJSON);
+                    return acc + (pax.length || 0);
+                } catch(e) { return acc; }
+            }, 0);
+            document.getElementById('stat-passengers').innerText = totalPax;
+
+            let recent = 'No data yet';
+            if (historyData.length > 0) {
+                const ts = String(historyData[0].timestamp);
+                if (ts.includes(' / ')) {
+                    recent = ts.split(' / ')[0]; // Cukup tampilkan bagian tanggalnya saja, e.g., "26 Juni 2026"
+                } else {
+                    const d = new Date(ts);
+                    recent = !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : ts;
+                }
+            }
+            document.getElementById('stat-recent').innerText = recent;
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-tbody');
+            if (historyData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colSpan="6" class="px-6 py-8 text-center text-slate-400">
+                            <i data-lucide="history" class="w-12 h-12 mx-auto mb-3 opacity-20"></i>
+                            No flight data history found.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+
+                tbody.innerHTML = historyData.map((data, idx) => {
+                    let routesHtml = '';
+                    try {
+                        const routes = JSON.parse(data.routesJSON);
+                        routesHtml = routes.map(r => `<div>${r.from || '?'} ➔ ${r.to || '?'}</div>`).join('');
+                    } catch(e) {}
+
+                    // Format Date Submitted
+                    let submittedFormatted = '-';
+                    if (data.timestamp) {
+                        const ts = String(data.timestamp);
+                        if (ts.includes(' / ')) {
+                            submittedFormatted = ts; // Langsung tampilkan "26 Juni 2026 / 18:20:51"
+                        } else {
+                            // Backward compatibility untuk format lama di google sheet (jika ada)
+                            const d = new Date(ts);
+                            if(!isNaN(d.getTime())) {
+                                submittedFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                            } else {
+                                submittedFormatted = ts;
+                            }
+                        }
+                    }
+
+                    // Format Flight Date using Safe Parser
+                    let flightFormatted = '-';
+                    if (data.date) {
+                        const str = String(data.date);
+                        const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                        if (match) {
+                            flightFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', dateOptions);
+                        } else {
+                            const d = new Date(str);
+                            if (!isNaN(d.getTime())) {
+                                flightFormatted = d.toLocaleDateString('en-GB', dateOptions);
+                            } else {
+                                flightFormatted = str;
+                            }
+                        }
+                    }
+
+                    return `
+                    <tr onclick="openDetailModal(${idx})" class="border-b border-slate-100 hover:bg-slate-100 transition-colors cursor-pointer group">
+                        <td class="px-6 py-4 group-hover:text-blue-600">${submittedFormatted}</td>
+                        <td class="px-6 py-4 font-medium text-slate-800">${flightFormatted}</td>
+                        <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">${data.aircraftReg || '-'}</span></td>
+                        <td class="px-6 py-4">${data.aircraftType || '-'}</td>
+                        <td class="px-6 py-4">${data.crewPic || '-'}</td>
+                        <td class="px-6 py-4 text-xs text-slate-500">${routesHtml}</td>
+                    </tr>
+                    `;
+                }).join('');
+            }
+            lucide.createIcons();
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toast-icon');
+            const toastMsg = document.getElementById('toast-message');
+
+            toast.classList.remove('hidden', 'bg-slate-800', 'bg-amber-600', 'bg-blue-600');
+            toastIcon.classList.remove('text-emerald-400', 'text-white');
+
+            if(type === 'success') {
+                toast.classList.add('bg-slate-800');
+                toastIcon.classList.add('text-emerald-400');
+                toastIcon.setAttribute('data-lucide', 'check-circle-2');
+            } else if(type === 'info') {
+                toast.classList.add('bg-blue-600');
+                toastIcon.classList.add('text-white');
+                toastIcon.setAttribute('data-lucide', 'info');
+            } else {
+                toast.classList.add('bg-amber-600');
+                toastIcon.classList.add('text-white');
+                toastIcon.setAttribute('data-lucide', 'alert-circle');
+            }
+            
+            toastMsg.innerText = message;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 5000);
+        }
+
+        // --- SYNC DATA ---
+        async function syncData() {
+            let iconSidebar = document.getElementById('icon-sync-sidebar');
+            let iconHistory = document.getElementById('icon-sync-history');
+
+            // UI Loading state
+            if(iconSidebar) iconSidebar.classList.add('animate-spin');
+            if(iconHistory) iconHistory.classList.add('animate-spin');
+            showToast('Syncing all data from Google Sheets...', 'info');
+
+            try {
+                // Call Google Apps Script Web App (GET method returns JSON for ALL sheets)
+                const response = await fetch(GOOGLE_SHEET_WEB_APP_URL);
+                if (!response.ok) throw new Error('Network response error');
+
+                const result = await response.json();
+
+                // Assign to Master Data Cache
+                masterData.aircrafts = result.aircrafts || [];
+                masterData.crews = result.crews || [];
+                masterData.locations = result.locations || [];
+                masterData.passengers = result.passengers || [];
+
+                populateDropdowns();
+
+                // Handle Flights History
+                const flights = result.flights || [];
+                if (flights.length > 0) {
+                    historyData = flights;
+                    // Sort descending by timestamp using robust custom parser
+                    historyData.sort((a, b) => parseCustomTimestamp(b.timestamp) - parseCustomTimestamp(a.timestamp));
+                    localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
+                    
+                    updateDashboardStats();
+                    if(document.getElementById('tab-history').classList.contains('active')) {
+                        renderHistory();
+                    }
+                }
+                showToast('Sync complete! Master Data & History updated.', 'success');
+            } catch (error) {
+                console.error('Sync error:', error);
+                showToast('Sync failed. Loading local data. (Ensure Apps Script is deployed).', 'warning');
+            } finally {
+                // PENTING: Ambil ulang referensi DOM karena lucide.createIcons() mereplace tag <i> menjadi <svg>
+                iconSidebar = document.getElementById('icon-sync-sidebar');
+                iconHistory = document.getElementById('icon-sync-history');
+                
+                if(iconSidebar) iconSidebar.classList.remove('animate-spin');
+                if(iconHistory) iconHistory.classList.remove('animate-spin');
+            }
+        }
+
+        // --- MODAL & PDF & EDIT LOGIC ---
+        function openDetailModal(idx) {
+            const data = historyData[idx];
+            const content = document.getElementById('pdf-content');
+            
+            // Helper to parse safely
+            const parseSafe = (json) => {
+                try { return JSON.parse(json) || []; } catch(e) { return []; }
+            };
+            
+            const routes = parseSafe(data.routesJSON);
+            const pax = parseSafe(data.passengersJSON);
+            const gh = parseSafe(data.groundHandlingJSON);
+            const slots = parseSafe(data.slotsJSON);
+            const acc = parseSafe(data.accommodationsJSON);
+            const trans = parseSafe(data.transportsJSON);
+
+            // Format Flight Date for Detail View securely
+            let flightDateFormatted = '-';
+            if (data.date) {
+                const str = String(data.date);
+                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    flightDateFormatted = new Date(match[1], parseInt(match[2]) - 1, match[3]).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                } else {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) {
+                        flightDateFormatted = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                    } else {
+                        flightDateFormatted = str;
+                    }
+                }
+            }
+
+            // Generate HTML for PDF/View
+            let html = `
+                <div class="text-center mb-8">
+                    <h1 class="text-2xl font-bold uppercase tracking-widest text-slate-900 border-b-[3px] border-slate-800 pb-2 inline-block">Flight Information Service</h1>
+                </div>
+
+                <div class="grid grid-cols-2 gap-x-8 gap-y-4 mb-8 text-sm">
+                    <div class="border border-slate-200 p-4 rounded-lg">
+                        <h4 class="font-bold text-slate-500 uppercase text-xs mb-2 border-b pb-1 text-center">Aircraft & Pax</h4>
+                        <table class="w-full">
+                            <tr><td class="py-1 font-semibold w-1/3 align-top">Date</td><td class="py-1 align-top">: ${flightDateFormatted}</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Aircraft Reg</td><td class="py-1 align-top">: ${data.aircraftReg || '-'}</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Aircraft Type</td><td class="py-1 align-top">: ${data.aircraftType || '-'}</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Lead Pax</td><td class="py-1 align-top">: ${data.leadPassenger || '-'}</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Lead Contact</td><td class="py-1 align-top">: ${data.leadContact || '-'}</td></tr>
+                        </table>
+                    </div>
+                    <div class="border border-slate-200 p-4 rounded-lg">
+                        <h4 class="font-bold text-slate-500 uppercase text-xs mb-2 border-b pb-1 text-center">Crew Information</h4>
+                        <table class="w-full">
+                            <tr><td class="py-1 font-semibold w-1/3 align-top">PIC</td><td class="py-1 align-top">: ${data.crewPic || '-'} (${data.crewPicPhone || '-'})</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">SIC</td><td class="py-1 align-top">: ${data.crewSic || '-'} (${data.crewSicPhone || '-'})</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Engineer</td><td class="py-1 align-top">: ${data.crewEngineer || '-'}</td></tr>
+                            <tr><td class="py-1 font-semibold align-top">Cabin Svc</td><td class="py-1 align-top">: ${data.crewCabin || '-'} (${data.crewCabinPhone || '-'})</td></tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Routes Table -->
+                <div class="mb-6">
+                    <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2 text-center">Route Information</h4>
+                    <table class="w-full text-xs text-center border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="border border-slate-300 p-2 text-center">LEG</th>
+                                <th class="border border-slate-300 p-2 text-center">DATE</th>
+                                <th class="border border-slate-300 p-2 text-center">FROM</th>
+                                <th class="border border-slate-300 p-2 text-center">TO</th>
+                                <th class="border border-slate-300 p-2 text-center">ETD (local time)</th>
+                                <th class="border border-slate-300 p-2 text-center">ETA (local time)</th>
+                                <th class="border border-slate-300 p-2 text-center">FLT TIME</th>
+                                <th class="border border-slate-300 p-2 text-center">REMARK</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${routes.map(r => `
+                                <tr>
+                                    <td class="border border-slate-300 p-2 text-center">${r.leg || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${r.date || '-'}</td>
+                                    <td class="border border-slate-300 p-2 font-bold text-center">${r.from || '-'}</td>
+                                    <td class="border border-slate-300 p-2 font-bold text-center">${r.to || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${r.etd || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${r.eta || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${r.fltTime || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${r.remark || '-'}</td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="8" class="border p-2 text-center text-slate-400">No route data</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Passengers Table -->
+                <div class="mb-6">
+                    <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2 text-center">Passenger Information</h4>
+                    <table class="w-full text-xs text-left border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-50">
+                                <th class="border border-slate-300 p-2 w-16 text-center">NO</th>
+                                <th class="border border-slate-300 p-2 w-24 text-center">LEG</th>
+                                <th class="border border-slate-300 p-2 text-center">NAME</th>
+                                <th class="border border-slate-300 p-2 w-32 text-center">SEX</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pax.map((p, i) => `
+                                <tr>
+                                    <td class="border border-slate-300 p-2 text-center">${i + 1}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${p.leg || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-left">${p.name || '-'}</td>
+                                    <td class="border border-slate-300 p-2 text-center">${p.sex || '-'}</td>
+                                </tr>
+                            `).join('') || '<tr><td colspan="4" class="border p-2 text-center text-slate-400">No passenger data</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Ground Handling & Slots -->
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Ground Handling</h4>
+                        <div class="text-xs space-y-3">
+                            ${gh.map(g => `
+                                <div class="border border-slate-200 p-2 rounded">
+                                    <p><strong>Airport:</strong> ${g.airport || '-'}</p>
+                                    <p><strong>Handler:</strong> ${g.handler || '-'}</p>
+                                    <p><strong>Phone:</strong> ${g.phone || '-'}</p>
+                                    <p><strong>PIC:</strong> ${g.pic || '-'} (${g.cell || '-'})</p>
+                                </div>
+                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No ground handling data</p>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Slot Information</h4>
+                        <div class="text-xs space-y-3">
+                            ${slots.map(s => `
+                                <div class="border border-slate-200 p-2 rounded">
+                                    <p><strong>Leg:</strong> ${s.leg || '-'}</p>
+                                    <p><strong>Landing At:</strong> ${s.landingAt || '-'}</p>
+                                    <p><strong>Status:</strong> ${s.status || '-'}</p>
+                                    <p><strong>Stand/Other:</strong> ${s.parkingStand || '-'} / ${s.otherInfo || '-'}</p>
+                                </div>
+                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No slot data</p>'}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accomodation & Transport -->
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Accommodation</h4>
+                        <div class="text-xs space-y-3">
+                            ${acc.map(a => `
+                                <div class="border border-slate-200 p-2 rounded">
+                                    <p class="font-bold">${a.hotelName || '-'}</p>
+                                    <p>${a.address || '-'}</p>
+                                    <p><strong>Phone:</strong> ${a.phone || '-'}</p>
+                                    <p><strong>PIC:</strong> ${a.picName || '-'} (${a.cellNo || '-'})</p>
+                                </div>
+                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No accommodation data</p>'}
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 bg-slate-100 p-2 text-sm uppercase mb-2">Transport</h4>
+                        <div class="text-xs space-y-3">
+                            ${trans.map(t => `
+                                <div class="border border-slate-200 p-2 rounded">
+                                    <p><strong>Loc:</strong> ${t.location || '-'}</p>
+                                    <p><strong>By:</strong> ${t.transportBy || '-'}</p>
+                                    <p><strong>Driver:</strong> ${t.driverName || '-'} (${t.cellNo || '-'})</p>
+                                </div>
+                            `).join('') || '<p class="text-slate-400 p-2 border border-slate-200 rounded">No transport data</p>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            content.innerHTML = html;
+
+            // Bind Edit Action
+            document.getElementById('btn-edit').onclick = () => {
+                closeDetailModal();
+                loadDataForEdit(idx);
+            };
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        function loadDataForEdit(idx) {
+            currentEditIndex = idx;
+            const data = historyData[idx];
+            
+            // Set standard form fields
+            const form = document.getElementById('flight-form');
+            
+            // SUPER SAFE DATE PARSER FOR <input type="date">
+            let dateValue = '';
+            if (data.date) {
+                const str = String(data.date);
+                const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (match) {
+                    dateValue = `${match[1]}-${match[2]}-${match[3]}`;
+                } else {
+                    const d = new Date(str);
+                    if (!isNaN(d.getTime())) {
+                        dateValue = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    }
+                }
+            }
+            form.elements['date'].value = dateValue;
+            
+            form.elements['aircraftReg'].value = data.aircraftReg || '';
+            autoFillAircraft(data.aircraftReg || ''); // Panggil gambar otomatis saat mode Edit
+            
+            form.elements['aircraftType'].value = data.aircraftType || '';
+            form.elements['leadPassenger'].value = data.leadPassenger || '';
+            form.elements['leadContact'].value = data.leadContact || '';
+            form.elements['crewPic'].value = data.crewPic || '';
+            form.elements['crewPicPhone'].value = data.crewPicPhone || '';
+            form.elements['crewSic'].value = data.crewSic || '';
+            form.elements['crewSicPhone'].value = data.crewSicPhone || '';
+            form.elements['crewEngineer'].value = data.crewEngineer || '';
+            form.elements['crewCabin'].value = data.crewCabin || '';
+            form.elements['crewCabinPhone'].value = data.crewCabinPhone || '';
+
+            // Set state array values safely
+            const parseSafe = (json) => {
+                try { return JSON.parse(json) || []; } catch(e) { return []; }
+            };
+            
+            // Proses routes dan pastikan field date jika ada di tabel route formatnya sesuai
+            const parsedRoutes = parseSafe(data.routesJSON);
+            state.routes = parsedRoutes.length ? parsedRoutes.map(r => {
+                if (r.date) {
+                    const str = String(r.date);
+                    const match = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (match) {
+                        r.date = `${match[1]}-${match[2]}-${match[3]}`;
+                    } else {
+                        const d = new Date(str);
+                        if (!isNaN(d.getTime())) r.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    }
+                }
+                return r;
+            }) : [{ ...defaultRows.routes }];
+            
+            state.passengers = parseSafe(data.passengersJSON).length ? parseSafe(data.passengersJSON) : [{ ...defaultRows.passengers }];
+            state.groundHandling = parseSafe(data.groundHandlingJSON).length ? parseSafe(data.groundHandlingJSON) : [{ ...defaultRows.groundHandling }];
+            state.slots = parseSafe(data.slotsJSON).length ? parseSafe(data.slotsJSON) : [{ ...defaultRows.slots }];
+            state.accommodations = parseSafe(data.accommodationsJSON).length ? parseSafe(data.accommodationsJSON) : [{ ...defaultRows.accommodations }];
+            state.transports = parseSafe(data.transportsJSON).length ? parseSafe(data.transportsJSON) : [{ ...defaultRows.transports }];
+
+            // Re-render UI
+            Object.keys(state).forEach(k => renderSection(k));
+
+            // Switch to form tab
+            switchTab('add-data');
+            
+            // Ubah UI menjadi mode "Edit Data"
+            document.getElementById('submit-text').innerText = 'Update Data';
+            document.getElementById('form-main-title').innerText = 'Edit Flight Information';
+            document.getElementById('form-sub-title').innerText = 'Update the details below. Data will overwrite the existing record.';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            showToast('Ready to edit. Click "Update Data" when finished.', 'success');
+        }
+
+        // Fungsi baru untuk membatalkan proses Edit
+        function cancelEdit() {
+            resetForm();
+            switchTab('history');
+            showToast('Edit mode cancelled.', 'info');
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdf-content');
+            
+            // Tweak styles temporarily for PDF generation if needed
+            element.classList.add('p-8');
+            
+            const opt = {
+                margin:       10, // mm
+                filename:     'Ecrew-Flight-Information.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Generate and Save
+            html2pdf().set(opt).from(element).save().then(() => {
+                element.classList.remove('p-8'); // remove temporary padding
+                showToast('PDF has been downloaded successfully!', 'success');
+            });
+        }
+    </script>
+</body>
+</html>
