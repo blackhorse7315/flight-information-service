@@ -1696,23 +1696,23 @@
             
             if (isTWA) {
                 headerHtml = `
-                    <div class="flex justify-center mb-4">
+                    <div class="flex justify-center mb-1.5 mt-0">
                         <img src="https://lh3.googleusercontent.com/d/1WNcGjsZ9_Fp54xzOl01EYRqM6-wY5Zh7" crossorigin="anonymous" alt="Logo" class="h-14 md:h-16 object-contain" />
                     </div>
-                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-1">FLIGHT INFORMATION SERVICE</h2>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-1 mt-0">FLIGHT INFORMATION SERVICE</h2>
                     <p class="text-sm text-slate-700 font-bold italic mb-1">Transwisata Prima Aviation</p>
                     <p class="text-xs text-slate-500 font-medium">Providing Essential Information for Safe and Efficient Flight Operations</p>
                 `;
             } else {
                 headerHtml = `
-                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-2">FLIGHT INFORMATION SERVICE</h2>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-2 mt-0">FLIGHT INFORMATION SERVICE</h2>
                     <p class="text-xs text-slate-500 font-medium">Providing Essential Information for Safe and Efficient Flight Operations</p>
                 `;
             }
 
             // Generate HTML for PDF/View
             let html = `
-                <div class="text-center mb-5 avoid-break break-inside-avoid">
+                <div class="text-center mb-4 mt-0 avoid-break break-inside-avoid">
                     ${headerHtml}
                 </div>
 
@@ -2102,7 +2102,7 @@
             element.classList.add('px-8', 'pb-8', 'pt-0'); 
             
             const opt = {
-                margin:       [4, 10, 10, 10], // Margin: [Atas(4mm), Kanan(10mm), Bawah(10mm), Kiri(10mm)]
+                margin:       [2, 10, 10, 10], // Margin: [Atas(2mm), Kanan(10mm), Bawah(10mm), Kiri(10mm)] - Sangat mepet atas
                 filename:     dynamicFileName,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
