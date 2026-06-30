@@ -205,7 +205,7 @@
                                         <h4 class="text-sm font-bold text-slate-600 flex items-center gap-2"><i data-lucide="info" class="w-4 h-4"></i> Aircraft Detail</h4>
                                     </div>
 
-                                    <div class="col-span-1 lg:col-span-2 flex flex-col gap-1.5">
+                                    <div class="col-span-1 flex flex-col gap-1.5">
                                         <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Aircraft Reg</label>
                                         <div class="flex gap-2">
                                             <select name="aircraftReg" id="select-aircraft" onchange="autoFillAircraft(this.value)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-blue-700 transition-all" required>
@@ -220,6 +220,14 @@
                                         
                                         <!-- Hidden Input for Aircraft Picture Profile URL -->
                                         <input type="hidden" name="aircraftPicUrl" id="hidden-aircraft-pic">
+                                    </div>
+                                    <div class="col-span-1 flex flex-col gap-1.5">
+                                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Company</label>
+                                        <select name="aircraftCompany" id="input-aircraft-company" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all" required>
+                                            <option value="">Select Company</option>
+                                            <option value="TWA">TWA</option>
+                                            <option value="Other">Other</option>
+                                        </select>
                                     </div>
                                 </div>
                                 
@@ -707,6 +715,22 @@
             const ac = masterData.aircrafts.find(a => a.reg === reg);
             document.getElementById('input-aircraft-type').value = ac ? ac.type : '';
             
+            // Auto fill Company
+            const companySelect = document.getElementById('input-aircraft-company');
+            if (companySelect && ac) {
+                let compVal = ac.company || '';
+                if (compVal === 'Transwisata') compVal = 'TWA'; // Compatibility if old master data has 'Transwisata'
+                if (compVal === 'TWA' || compVal === 'Other') {
+                    companySelect.value = compVal;
+                } else if (compVal) {
+                    companySelect.value = 'Other';
+                } else {
+                    companySelect.value = '';
+                }
+            } else if (companySelect) {
+                companySelect.value = '';
+            }
+            
             // Auto Update Picture Profile
             const picPreview = document.getElementById('aircraft-pic-preview');
             const hiddenPic = document.getElementById('hidden-aircraft-pic');
@@ -799,7 +823,7 @@
                     <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Aircraft Type</label><input type="text" name="type" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500 uppercase" required></div>
                     <div class="space-y-1"><label class="text-xs font-semibold text-slate-600">Company</label>
                         <select name="company" class="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-amber-500" required>
-                            <option value="Transwisata">Transwisata</option>
+                            <option value="TWA">TWA</option>
                             <option value="Other">Other</option>
                         </select>
                     </div>
@@ -1151,8 +1175,8 @@
 
             // Gather standard form values
             const formDataObj = new FormData(e.target);
-            // Menambahkan aircraftPicUrl dan crewEngineerPhone ke dalam field yang disubmit ke Sheets
-            const standardFields = ['date', 'aircraftReg', 'aircraftType', 'aircraftPicUrl', 'leadPassenger', 'leadContact', 'crewPic', 'crewPicPhone', 'crewSic', 'crewSicPhone', 'crewEngineer', 'crewEngineerPhone', 'crewCabin', 'crewCabinPhone'];
+            // Menambahkan aircraftCompany, aircraftPicUrl, dan crewEngineerPhone ke dalam field yang disubmit ke Sheets
+            const standardFields = ['date', 'aircraftReg', 'aircraftType', 'aircraftCompany', 'aircraftPicUrl', 'leadPassenger', 'leadContact', 'crewPic', 'crewPicPhone', 'crewSic', 'crewSicPhone', 'crewEngineer', 'crewEngineerPhone', 'crewCabin', 'crewCabinPhone'];
             
             // PENTING: Pertahankan timestamp lama jika sedang Edit, agar Google Sheets menimpa baris yang benar
             const flightData = {
@@ -1666,20 +1690,40 @@
                 }
             }
 
+            // Menentukan Header Dinamis berdasarkan Company
+            const isTWA = (data.aircraftCompany === 'TWA');
+            let headerHtml = '';
+            
+            if (isTWA) {
+                headerHtml = `
+                    <div class="flex justify-center mb-4">
+                        <img src="https://lh3.googleusercontent.com/d/1WNcGjsZ9_Fp54xzOl01EYRqM6-wY5Zh7" crossorigin="anonymous" alt="Logo" class="h-14 md:h-16 object-contain" />
+                    </div>
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-1">FLIGHT INFORMATION SERVICE</h2>
+                    <p class="text-sm text-slate-700 font-bold italic mb-1">Transwisata Prima Aviation</p>
+                    <p class="text-xs text-slate-500 font-medium">Providing Essential Information for Safe and Efficient Flight Operations</p>
+                `;
+            } else {
+                headerHtml = `
+                    <h2 class="text-2xl font-black text-slate-800 uppercase tracking-widest border-b-2 border-slate-800 inline-block pb-1 mb-2">FLIGHT INFORMATION SERVICE</h2>
+                    <p class="text-xs text-slate-500 font-medium">Providing Essential Information for Safe and Efficient Flight Operations</p>
+                `;
+            }
+
             // Generate HTML for PDF/View
             let html = `
                 <div class="text-center mb-5 avoid-break break-inside-avoid">
-                    <h1 class="text-[18px] font-bold uppercase tracking-widest text-slate-900 border-b-[2px] border-slate-800 pb-1 inline-block mb-1">Flight Information Service</h1>
-                    <p class="text-[14px] text-slate-500 font-medium tracking-wide">Providing Essential Information for Safe and Efficient Flight Operations</p>
+                    ${headerHtml}
                 </div>
 
-                <div class="grid grid-cols-2 gap-x-6 gap-y-3 mb-6 text-[12px] avoid-break break-inside-avoid">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 avoid-break break-inside-avoid">
                     <div class="border border-slate-200 p-3 rounded-lg">
                         <h4 class="font-bold text-slate-500 uppercase text-[12px] mb-2 border-b pb-1 text-center">Aircraft & Pax</h4>
                         <table class="w-full">
                             <tr><td class="py-0.5 font-semibold w-1/3 align-top">Date</td><td class="py-0.5 align-top">: ${flightDateFormatted}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Aircraft Reg</td><td class="py-0.5 align-top">: ${data.aircraftReg || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Aircraft Type</td><td class="py-0.5 align-top">: ${data.aircraftType || '-'}</td></tr>
+                            <tr><td class="py-0.5 font-semibold align-top">Company</td><td class="py-0.5 align-top">: ${data.aircraftCompany || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Lead Pax</td><td class="py-0.5 align-top">: ${data.leadPassenger || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Lead Contact</td><td class="py-0.5 align-top">: ${data.leadContact || '-'}</td></tr>
                         </table>
@@ -1891,6 +1935,7 @@
             autoFillAircraft(data.aircraftReg || ''); // Panggil gambar otomatis saat mode Edit
             
             form.elements['aircraftType'].value = data.aircraftType || '';
+            form.elements['aircraftCompany'].value = data.aircraftCompany || '';
             form.elements['leadPassenger'].value = data.leadPassenger || '';
             form.elements['leadContact'].value = data.leadContact || '';
             form.elements['crewPic'].value = data.crewPic || '';
