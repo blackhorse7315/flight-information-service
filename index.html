@@ -1734,7 +1734,6 @@
                             <tr><td class="py-0.5 font-semibold w-1/3 align-top">Date</td><td class="py-0.5 align-top">: ${flightDateFormatted}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Aircraft Reg</td><td class="py-0.5 align-top">: ${data.aircraftReg || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Aircraft Type</td><td class="py-0.5 align-top">: ${data.aircraftType || '-'}</td></tr>
-                            <tr><td class="py-0.5 font-semibold align-top">Company</td><td class="py-0.5 align-top">: ${data.aircraftCompany || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Lead Pax</td><td class="py-0.5 align-top">: ${data.leadPassenger || '-'}</td></tr>
                             <tr><td class="py-0.5 font-semibold align-top">Lead Contact</td><td class="py-0.5 align-top">: ${data.leadContact || '-'}</td></tr>
                         </table>
@@ -1906,7 +1905,7 @@
             // Set standard form fields
             const form = document.getElementById('flight-form');
             
-            // SUPER SAFE DATE PARSER FOR <input type="date">
+            // SUPER SAFE DATE PARSER FOR <input type="date"> (Strictly YYYY-MM-DD)
             const parseDateForInput = (rawDate) => {
                 if (!rawDate) return '';
                 const str = String(rawDate).trim();
@@ -1917,7 +1916,7 @@
                     if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 }
                 
-                // Format Standar YYYY-MM-DD
+                // Format Standar YYYY-MM-DD (Kemungkinan besar ini yang paling aman)
                 const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
                 if (matchIso) return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
                 
@@ -1925,7 +1924,7 @@
                 const matchID = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                 if (matchID) return `${matchID[3]}-${String(matchID[2]).padStart(2,'0')}-${String(matchID[1]).padStart(2,'0')}`;
                 
-                // Fallback Date JavaScript (Bisa baca text seperti "16 June 2026")
+                // Fallback Date JavaScript (Bisa baca text seperti "16 June 2026" atau Date object)
                 const d = new Date(str);
                 if (!isNaN(d.getTime())) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 
