@@ -1716,7 +1716,7 @@
                     ${headerHtml}
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 avoid-break break-inside-avoid">
+                <div class="grid grid-cols-2 gap-4 mb-4 avoid-break break-inside-avoid">
                     <div class="border border-slate-200 p-3 rounded-lg">
                         <h4 class="font-bold text-slate-500 uppercase text-[12px] mb-2 border-b pb-1 text-center">Aircraft & Pax</h4>
                         <table class="w-full">
@@ -2097,11 +2097,12 @@
             const acReg = (data.aircraftReg || 'UNKNOWN_REG').replace(/[^a-zA-Z0-9-]/g, '');
             const dynamicFileName = `FIS_${acReg}_${dateStr}.pdf`;
 
-            // Tweak styles temporarily for PDF generation if needed
-            element.classList.add('p-8');
+            // Tweak styles temporarily for PDF generation to reduce top margin
+            element.classList.remove('p-8');
+            element.classList.add('px-8', 'pb-8', 'pt-0'); 
             
             const opt = {
-                margin:       10, // mm
+                margin:       [4, 10, 10, 10], // Margin: [Atas(4mm), Kanan(10mm), Bawah(10mm), Kiri(10mm)]
                 filename:     dynamicFileName,
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
@@ -2111,7 +2112,9 @@
 
             // Generate and Save
             html2pdf().set(opt).from(element).save().then(() => {
-                element.classList.remove('p-8'); // remove temporary padding
+                // Kembalikan style seperti semula setelah selesai download
+                element.classList.remove('px-8', 'pb-8', 'pt-0'); 
+                element.classList.add('p-8');
                 showToast(`PDF File ${dynamicFileName} downloaded successfully!`, 'success');
             });
         }
