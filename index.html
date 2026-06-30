@@ -2041,32 +2041,82 @@
             };
 
             try {
-                // Delete from Google Sheets API
-                await fetch(GOOGLE_SHEET_WEB_APP_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                // Delete locally
+                if (GOOGLE_SHEET_WEB_APP_URL) {
+                    await fetch(GOOGLE_SHEET_WEB_APP_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                // Remove locally
                 historyData.splice(flightToDeleteIndex, 1);
                 localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
-                updateDashboardStats();
-                renderHistory();
                 
-                showToast('Flight data permanently deleted.', 'success');
+                updateDashboardStats();
+                if (document.getElementById('tab-history').classList.contains('active')) {
+                    renderHistory();
+                }
+                
+                showToast('Flight data successfully deleted.', 'success');
+                closeDeleteModal();
                 closeDetailModal();
             } catch (error) {
-                console.error('Delete error:', error);
-                showToast('Failed to delete data. Check your connection.', 'warning');
-            } finally {
+                console.warn('Delete warning:', error);
+                
+                // Fallback Offline delete
+                historyData.splice(flightToDeleteIndex, 1);
+                localStorage.setItem('ecrewHistory', JSON.stringify(historyData));
+                
+                updateDashboardStats();
+                if (document.getElementById('tab-history').classList.contains('active')) {
+                    renderHistory();
+                }
+                
+                showToast('Deleted locally. Connection to Google Sheets failed.', 'warning');
                 closeDeleteModal();
+                closeDetailModal();
+            } finally {
                 btn.disabled = false;
                 icon.setAttribute('data-lucide', 'trash-2');
                 icon.classList.remove('animate-spin');
                 lucide.createIcons();
             }
+        }
+
+        function editFlight() {
+            if (currentViewIndex === -1) return;
+            
+            // Muat data ke form
+            loadDataForEdit(currentViewIndex);
+            
+            // Pastikan state diatur ke index saat ini (Mode Edit aktif)
+            currentEditIndex = currentViewIndex;
+            
+            closeDetailModal();
+            switchTab('add-data');
+        }
+
+        function duplicateFlight() {
+            if (currentViewIndex === -1) return;
+            
+            // 1. Muat data lama ke dalam form
+            loadDataForEdit(currentViewIndex);
+            
+            // 2. PENTING: Ubah state menjadi -1 (Mode Data Baru) SETELAH data dimuat
+            // Ini akan memaksa fungsi submit untuk membuat Timestamp baru dan tidak menimpa data lama
+            currentEditIndex = -1;
+            
+            // Keamanan ganda: Jika ada input timestamp tersembunyi, kosongkan
+            const form = document.getElementById('flight-form');
+            if (form && form.elements['timestamp']) {
+                form.elements['timestamp'].value = '';
+            }
+
+            closeDetailModal();
+            switchTab('add-data');
+            showToast('Mode Duplikat aktif. Data siap disimpan sebagai entri baru.', 'info');
         }
 
         function downloadPDF() {
