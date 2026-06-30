@@ -571,7 +571,7 @@
     <!-- Application Script -->
     <script>
         // --- CONFIGURATION ---
-        const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwlLXa-I3DLkpttRA4mvbIdrMtOonC-MmvscRNmI8bvqE25zqu8bUmpvpz8HhQ3Y1Ar/exec";
+        const GOOGLE_SHEET_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyOrz-8jNiwF5WJWANkj_8fULW_SqWXJZ-UmnvzaXxArAuBrxWxQhB3YpoE_xV-D7Z1/exec";
 
         // Application State
         const state = {
@@ -938,8 +938,14 @@
                 });
                 
                 // Optimistic update locally
-                // FIX: Menyesuaikan nama key untuk LeadPassengers (camelCase)
-                const arrayKey = currentMasterSheet.charAt(0).toLowerCase() + currentMasterSheet.slice(1);
+                // FIX: Menyesuaikan penamaan untuk Sheet yang menggunakan CamelCase (LeadPassengers)
+                let arrayKey = currentMasterSheet.charAt(0).toLowerCase() + currentMasterSheet.slice(1);
+                
+                // Pengecekan ekstra untuk case LeadPassengers agar sesuai dengan masterData
+                if (currentMasterSheet === 'LeadPassengers') {
+                    arrayKey = 'leadPassengers';
+                }
+
                 if (masterData[arrayKey]) {
                     masterData[arrayKey].push(dataObj);
                 }
@@ -1595,12 +1601,17 @@
                 const result = await response.json();
 
                 // Assign to Master Data Cache
+                // Catatan: Google Apps Script Anda (doGet) me-return nama objek dalam bentuk lowerCase,
+                // sehingga Sheet "LeadPassengers" dikirim sebagai "leadpassengers".
                 masterData.aircrafts = result.aircrafts || [];
                 masterData.crews = result.crews || [];
                 masterData.locations = result.locations || [];
                 masterData.passengers = result.passengers || [];
                 masterData.handlers = result.handlers || [];
-                masterData.leadPassengers = result.leadPassengers || [];
+                
+                // Cek hasil dari Apps Script apakah dinamakan "leadpassengers" (huruf kecil semua)
+                // atau fallback ke data lama.
+                masterData.leadPassengers = result.leadpassengers || result.leadPassengers || [];
 
                 populateDropdowns();
 
