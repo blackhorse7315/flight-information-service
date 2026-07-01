@@ -382,6 +382,9 @@
                             </div>
                         </div>
                         <div class="overflow-x-auto">
+                            <!-- Datalist for Passengers -->
+                            <datalist id="passenger-datalist"></datalist>
+
                             <table class="w-full text-sm text-left">
                                 <thead class="text-xs text-slate-500 uppercase bg-slate-50">
                                     <tr>
@@ -704,6 +707,12 @@
             const locList = document.getElementById('locations-list');
             if(locList) {
                 locList.innerHTML = masterData.locations.map(l => `<option value="${l.icao}">`).join('');
+            }
+            
+            // Passengers (Datalist for Passengers Searchable)
+            const paxDatalist = document.getElementById('passenger-datalist');
+            if(paxDatalist) {
+                paxDatalist.innerHTML = masterData.passengers.map(p => `<option value="${p.name}">`).join('');
             }
             
             // Re-render sections that might need updated dropdown options
@@ -1078,17 +1087,12 @@
                     </tr>`;
                 } 
                 else if (section === 'passengers') {
-                    const datalistId = `pax-list-${i}`;
-                    const paxOptions = masterData.passengers.map(p => `<option value="${p.name}">`).join('');
                     html += `
                     <tr class="border-b border-slate-100 last:border-0">
                         <td class="px-3 py-2 text-center text-slate-400 font-bold">#${i + 1}</td>
                         <td class="px-3 py-2"><input type="text" data-section="${section}" data-index="${i}" name="leg" class="w-full min-w-[90px] p-2 bg-slate-50 rounded border border-slate-200 text-center font-semibold" value="${item.leg}" placeholder="e.g. 1.2"></td>
-                        <td class="px-3 py-2 relative">
-                            <input type="text" list="${datalistId}" data-section="${section}" data-index="${i}" name="name" onchange="autoFillPassenger(this, ${i})" class="w-full p-2 bg-white rounded border border-slate-200 transition-all focus:ring-2 focus:ring-blue-500 outline-none" value="${item.name}" placeholder="Type to search pax..." autocomplete="off">
-                            <datalist id="${datalistId}">
-                                ${paxOptions}
-                            </datalist>
+                        <td class="px-3 py-2">
+                            <input type="text" list="passenger-datalist" data-section="${section}" data-index="${i}" name="name" onchange="autoFillPassenger(this, ${i})" class="w-full p-2 bg-white rounded border border-slate-200" value="${item.name}" placeholder="Type to search pax...">
                         </td>
                         <td class="px-3 py-2">
                             <select data-section="${section}" data-index="${i}" name="sex" class="w-full p-2 bg-slate-100 rounded border border-slate-200 pointer-events-none" tabindex="-1" readonly>
