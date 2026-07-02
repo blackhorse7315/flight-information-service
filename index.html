@@ -1039,6 +1039,11 @@
                     target.value = target.value.replace(/ /g, '.');
                 }
                 
+                // FITUR BARU: Paksa nilai menjadi huruf besar untuk 'from' dan 'to' pada Rute
+                if (field === 'from' || field === 'to') {
+                    target.value = target.value.toUpperCase();
+                }
+                
                 state[section][index][field] = target.value;
             }
         }
